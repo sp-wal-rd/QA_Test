@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QA Feature Verification Checklist</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0d0f12;
+      --surface: #141720;
+      --surface2: #1c2030;
+      --border: #2a2f3d;
+      --accent: #00d4aa;
+      --accent2: #4f8ef7;
+      --warn: #f7c948;
+      --danger: #f75c5c;
+      --text: #e2e8f0;
+      --muted: #7a8499;
+      --checked-bg: #0a2e26;
+      --radius: 6px;
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'IBM Plex Sans', sans-serif;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0 0 80px;
+    }
+
+    /* ── Header bar ── */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar .logo {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .topbar .divider {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .counter {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .counter span {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* ── Main container ── */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    /* ── Section headings ── */
+    .section-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+
+    .divider-line {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 36px 0;
+    }
+
+    /* ── Heading input ── */
+    .input-group {
+      margin-bottom: 28px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .input-group input[type="text"],
+    .input-group textarea,
+    .input-group select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 15px;
+      padding: 12px 16px;
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    .input-group input[type="text"]:focus,
+    .input-group textarea:focus,
+    .input-group select:focus {
+      border-color: var(--accent);
+    }
+
+    .input-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .input-group select option {
+      background: var(--surface2);
+    }
+
+    /* ── Feature cards ── */
+    .feature-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: border-color .2s, background .2s;
+      overflow: hidden;
+    }
+
+    .feature-card.is-checked {
+      border-color: var(--accent);
+      background: var(--checked-bg);
+    }
+
+    .feature-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 18px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* Custom checkbox */
+    .cb-wrap {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .cb-wrap input[type="checkbox"] {
+      display: none;
+    }
+
+    .cb-box {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color .2s, background .2s;
+      flex-shrink: 0;
+    }
+
+    .feature-card.is-checked .cb-box {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .cb-box svg {
+      display: none;
+    }
+
+    .feature-card.is-checked .cb-box svg {
+      display: block;
+    }
+
+    .feature-meta {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .feature-num {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    .feature-name {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.4;
+      color: var(--text);
+    }
+
+    /* Expand button */
+    .expand-btn {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      transition: color .2s, transform .2s;
+      align-self: center;
+    }
+
+    .expand-btn.open {
+      transform: rotate(180deg);
+      color: var(--accent);
+    }
+
+    /* Expanded details */
+    .feature-details {
+      display: none;
+      padding: 0 18px 16px 52px;
+      border-top: 1px solid var(--border);
+      margin-top: 0;
+    }
+
+    .feature-details.open {
+      display: block;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 600px) {
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .detail-block {}
+
+    .detail-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .detail-value {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent2);
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .detail-value.evidence {
+      color: var(--warn);
+    }
+
+    /* Pass/Fail selector per item */
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .status-label {
+      font-size: 12px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .status-pills {
+      display: flex;
+      gap: 8px;
+    }
+
+    .pill {
+      padding: 4px 14px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .pill.pass.active {
+      background: #0d3d2a;
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .pill.fail.active {
+      background: #3d0d0d;
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .pill.na.active {
+      background: #2d2d10;
+      border-color: var(--warn);
+      color: var(--warn);
+    }
+
+    /* Remark input inside card */
+    .remark-input {
+      margin-top: 10px;
+    }
+
+    .remark-input label {
+      font-size: 11px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .remark-input input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 13px;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    .remark-input input:focus {
+      border-color: var(--accent);
+    }
+
+    /* ── Custom entries ── */
+    .custom-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .custom-entry {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 10px;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+    }
+
+    @media (max-width: 640px) {
+      .custom-entry {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .custom-entry input,
+    .custom-entry select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 13px;
+      padding: 8px 10px;
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    .custom-entry input:focus,
+    .custom-entry select:focus {
+      border-color: var(--accent);
+    }
+
+    .remove-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--danger);
+      border-radius: 4px;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color .2s;
+    }
+
+    .remove-btn:hover {
+      border-color: var(--danger);
+    }
+
+    .add-btn {
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      color: var(--accent);
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 18px;
+      cursor: pointer;
+      width: 100%;
+      transition: border-color .2s, background .2s;
+    }
+
+    .add-btn:hover {
+      border-color: var(--accent);
+      background: var(--checked-bg);
+    }
+
+    /* ── Submit section ── */
+    .submit-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+    }
+
+    .submit-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .submit-row .input-group {
+      margin: 0;
+      flex: 0 0 220px;
+    }
+
+    .submit-btn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: var(--radius);
+      font-family: var(--sans);
+      font-size: 15px;
+      font-weight: 700;
+      padding: 12px 36px;
+      cursor: pointer;
+      letter-spacing: .5px;
+      transition: opacity .2s, transform .1s;
+      white-space: nowrap;
+    }
+
+    .submit-btn:hover {
+      opacity: .9;
+    }
+
+    .submit-btn:active {
+      transform: scale(.98);
+    }
+
+    .submit-btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+
+    /* Status messages */
+    .status-msg {
+      margin-top: 16px;
+      font-size: 13px;
+      padding: 10px 16px;
+      border-radius: 4px;
+      display: none;
+      font-family: var(--mono);
+    }
+
+    .status-msg.success {
+      background: #0d3d2a;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      display: block;
+    }
+
+    .status-msg.error {
+      background: #3d0d0d;
+      border: 1px solid var(--danger);
+      color: var(--danger);
+      display: block;
+    }
+
+    .status-msg.loading {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      display: block;
+    }
+
+    /* Sheet URL config bar */
+    .config-bar {
+      background: #1a1a00;
+      border-bottom: 1px solid #3d3a00;
+      padding: 12px 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .config-bar label {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--warn);
+      white-space: nowrap;
+      letter-spacing: 1px;
+    }
+
+    .config-bar input {
+      flex: 1;
+      min-width: 200px;
+      background: var(--bg);
+      border: 1px solid #3d3a00;
+      border-radius: 4px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 6px 10px;
+      outline: none;
+    }
+
+    .config-bar input:focus {
+      border-color: var(--warn);
+    }
+
+    .config-bar .hint {
+      font-size: 11px;
+      color: var(--muted);
+      flex-basis: 100%;
+    }
+
+    .progress-bar-wrap {
+      height: 3px;
+      background: var(--border);
+      margin-bottom: 2px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      width: 0%;
+      transition: width .3s;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Config bar for Google Sheet URL -->
+  <div class="config-bar">
+    <label>⚙ GOOGLE SHEET SCRIPT URL</label>
+    <input type="url" id="sheetUrl" placeholder="Paste your Google Apps Script Web App URL here…" />
+    <span class="hint">Deploy a Google Apps Script as a Web App and paste the URL above. See instructions in the submit
+      section.</span>
+  </div>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <span class="logo">QA · Feature Verification</span>
+    <div class="divider"></div>
+    <span class="counter">Selected: <span id="countChecked">0</span> / 26</span>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <div class="container">
+
+    <!-- ① Report Heading -->
+    <div class="section-label">Step 01</div>
+    <div class="section-title">Report Details</div>
+
+    <div class="input-group">
+      <label>Report / Submission Heading *</label>
+      <input type="text" id="reportHeading"
+        placeholder="e.g.  QA Verification Report — Device Batch #042 — March 2026" />
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="input-group">
+        <label>Tester Name</label>
+        <input type="text" id="testerName" placeholder="Your name" />
+      </div>
+      <div class="input-group">
+        <label>Device / Build Version</label>
+        <input type="text" id="buildVersion" placeholder="e.g. v2.4.1-release" />
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Additional Notes</label>
+      <textarea id="reportNotes" placeholder="Any general observations about this test run…"></textarea>
+    </div>
+
+    <hr class="divider-line" />
+
+    <!-- ② Feature checklist -->
+    <div class="section-label">Step 02</div>
+    <div class="section-title">Feature Verification Checklist</div>
+
+    <div class="feature-grid" id="featureGrid">
+      <!-- Injected by JS -->
+    </div>
+
+    <hr class="divider-line" />
+
+    <!-- ③ Custom entries -->
+    <div class="section-label">Step 03</div>
+    <div class="section-title">Custom / Additional Test Items</div>
+
+    <div class="custom-list" id="customList"></div>
+    <button class="add-btn" id="addCustomBtn">＋ Add Custom Test Item</button>
+
+    <hr class="divider-line" />
+
+    <!-- ④ Submit -->
+    <div class="section-label">Step 04</div>
+    <div class="section-title">Submit Report</div>
+
+    <div class="submit-section">
+      <div class="submit-row">
+        <div class="input-group">
+          <label>Authorization Code *</label>
+          <input type="password" id="authCode" placeholder="Enter code to submit" />
+        </div>
+        <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Submit to Google Sheet</button>
+      </div>
+
+      <div class="status-msg" id="statusMsg"></div>
+
+      <details style="margin-top:24px; color: var(--muted); font-size:12px; line-height:1.7;">
+        <summary
+          style="cursor:pointer; color:var(--accent2); font-family:var(--mono); font-size:11px; letter-spacing:1px;">
+          ▸ HOW TO CONNECT YOUR GOOGLE SHEET
+        </summary>
+        <ol style="margin:12px 0 0 16px; font-family:var(--mono);">
+          <li>Open a Google Sheet → Extensions → Apps Script</li>
+          <li>Paste this code:<br /><br />
+            <code style="background:var(--bg);display:block;padding:10px;border-radius:4px;white-space:pre-wrap;">function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = JSON.parse(e.postData.contents);
+  var row = [
+    new Date(),
+    data.heading, data.tester, data.build, data.notes,
+    data.checkedCount, data.summary, data.customItems
+  ];
+  sheet.appendRow(row);
+  return ContentService.createTextOutput(
+    JSON.stringify({status:"ok"})
+  ).setMimeType(ContentService.MimeType.JSON);
+}</code>
+          </li>
+          <li>Deploy → New Deployment → Web App → "Anyone" → Copy URL</li>
+          <li>Paste the URL in the config bar at the top of this page</li>
+        </ol>
+      </details>
+    </div>
+
+  </div><!-- /container -->
+
+  <script>
+    // ─────────────────────────────────────────────
+    //  DATA  (26 features from Excel)
+    // ─────────────────────────────────────────────
+    const FEATURES = [
+      {
+        n: 1, fn: "External memory available.",
+        spec: "8MB", ev: "Health Packet JSON"
+      },
+      {
+        n: 2, fn: "External memory used.",
+        spec: "3.0 MB to 3.2 MB", ev: "Health Packet JSON"
+      },
+      {
+        n: 3, fn: "External memory free.",
+        spec: "4.8 MB to 5 MB", ev: "Health Packet JSON"
+      },
+      {
+        n: 4, fn: "Time from power On to MQTT connection",
+        spec: "(22 to 30) sec", ev: "Cat Studio"
+      },
+      {
+        n: 5, fn: "Battery consumption before power on",
+        spec: "25 µA", ev: "Current Profiler Data"
+      },
+      {
+        n: 6, fn: "Battery current consumption after network connection (Solid blue) — Health packet frequency 300 sec",
+        spec: "8 mA", ev: "Current Profiler Data"
+      },
+      {
+        n: 7, fn: "Battery consumption 1 minute after power off",
+        spec: "25 µA", ev: "Current Profiler Data"
+      },
+      {
+        n: 8, fn: "Kernel Logs Mode OFF (Device restarts on App crash)",
+        spec: "Off", ev: "Cat Studio"
+      },
+      {
+        n: 9, fn: "Battery charging current on 10% level (2000 mAh battery)",
+        spec: "(500 to 880) mA", ev: "DC Source / Battery Photo"
+      },
+      {
+        n: 10, fn: "Battery charging current on 90% level (2000 mAh battery)",
+        spec: "(400 to 550) mA", ev: "DC Source / Battery Photo"
+      },
+      {
+        n: 11, fn: "Network strength 1 minute after solid blue",
+        spec: "3rd floor\n(83–100)%\n(26 to 31)\nRSRP: −70 to −90\nRSRQ: −10 to −15", ev: "SPT Logs / Phone Screenshot"
+      },
+      {
+        n: 12, fn: "Band verification",
+        spec: "3, 5, 8, 40, 41", ev: "SPT Logs / Phone Screenshot"
+      },
+      {
+        n: 13, fn: "Sound level at 1 m / 10 cm distance (Welcome sound) in dB",
+        spec: "As per Business Commitment", ev: "dB Meter Photo"
+      },
+      {
+        n: 14, fn: "Sound level at 1 m / 10 cm distance (Maximum volume) in dB",
+        spec: "As per Business Commitment", ev: "dB Meter Photo"
+      },
+      {
+        n: 15, fn: "Sound level at 1 m / 10 cm distance (Last transaction) in dB",
+        spec: "As per Business Commitment", ev: "dB Meter Photo"
+      },
+      {
+        n: 16, fn: "Testing of RTC update and accuracy using customer or Walnut time sync server",
+        spec: "Around 2 sec difference in system and device time", ev: "SPT Logs"
+      },
+      {
+        n: 17, fn: "Testing of Radio Reset on no connection — as per logic approved by R&D",
+        spec: "Radio refresh every 7 min 30 sec. Shutdown after 15 min.", ev: "Cat Studio / SIM Photo"
+      },
+      {
+        n: 18, fn: "Testing of device switch off to save data on blacklisting and revoked certificates",
+        spec: "Not Applicable", ev: "Cat Studio"
+      },
+      {
+        n: 19, fn: "Language files present in device",
+        spec: "HND, ENG", ev: "Health Packet JSON"
+      },
+      {
+        n: 20, fn: "Testing of device for allocated, used and peak thread memory of all running threads after pushing 1000 transactions (1 transaction every 20 seconds)",
+        spec: "Refer stack spec sheet provided by R&D", ev: "SPT Logs"
+      },
+      {
+        n: 21, fn: "SIM PDP based reset timeout (1602, 1603, 1605)\n• Cfun-0 (radio off) & Cfun-1 (radio on) pair — safe interval 7.5 min\n• Replicate by inserting deactivated SIM\n• No event if no SIM inserted\n• No radio reset if PDP available",
+        spec: "Enable logs. Check retries on SPT. Burn cert deleted app via aboot Tool. Give 235 command. Remove and insert SIM again.", ev: "Cat Studio"
+      },
+      {
+        n: 22, fn: "CEMODE test for verification of voice and data centric connection in module 1603",
+        spec: "Return value expected 1603: CEMODE=0 (Data Centric)", ev: "SPT Logs"
+      },
+      {
+        n: 23, fn: "Test Devices shipped to customer",
+        spec: "Customer Approval", ev: "Mail to customer after sending"
+      },
+      {
+        n: 24, fn: "Using any working SIM provided by customer or Walnut — OTA / DFOTA / Lang OTA Testing normal: A → B → A",
+        spec: "Loop closure", ev: "Cat Studio"
+      },
+      {
+        n: 25, fn: "Using any working SIM provided by customer or Walnut — OTA / DFOTA / Lang OTA Testing interrupted: A → B interrupted … must stay with A",
+        spec: "Device must stay with A.", ev: "Cat Studio"
+      },
+      {
+        n: 26, fn: "Using any working SIM provided by customer or Walnut — OTA / DFOTA / Lang OTA rapid repeat: A → B command and repeat A → B within 1 second (notice failure of second OTA; first must pass)",
+        spec: "First OTA should pass and device should connect with MQTT.", ev: "Cat Studio"
+      },
+    ];
+
+    // ─────────────────────────────────────────────
+    //  RENDER FEATURES
+    // ─────────────────────────────────────────────
+    const grid = document.getElementById('featureGrid');
+
+    FEATURES.forEach(f => {
+      const card = document.createElement('div');
+      card.className = 'feature-card';
+      card.dataset.id = f.n;
+
+      card.innerHTML = `
+    <div class="feature-header" onclick="toggleExpand(${f.n}, this)">
+      <div class="cb-wrap">
+        <input type="checkbox" id="cb${f.n}" onchange="toggleCheck(${f.n}, this)" onclick="event.stopPropagation()"/>
+        <div class="cb-box" onclick="event.stopPropagation(); document.getElementById('cb${f.n}').click()">
+          <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+            <path d="M1 5L4.5 8.5L11 1" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+      <div class="feature-meta">
+        <div class="feature-num">FEATURE #${String(f.n).padStart(2, '0')}</div>
+        <div class="feature-name">${f.fn.replace(/\n/g, '<br/>')}</div>
+      </div>
+      <button class="expand-btn" aria-label="Toggle details">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+    </div>
+    <div class="feature-details" id="details${f.n}">
+      <div class="detail-grid">
+        <div class="detail-block">
+          <div class="detail-label">Specification (Approved by R&amp;D)</div>
+          <div class="detail-value">${f.spec.replace(/</g, '&lt;')}</div>
+        </div>
+        <div class="detail-block">
+          <div class="detail-label">Evidence Required</div>
+          <div class="detail-value evidence">${f.ev}</div>
+        </div>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Result:</span>
+        <div class="status-pills">
+          <div class="pill pass" onclick="setPill(${f.n},'pass',this)">✓ PASS</div>
+          <div class="pill fail" onclick="setPill(${f.n},'fail',this)">✗ FAIL</div>
+          <div class="pill na"   onclick="setPill(${f.n},'na',this)">N/A</div>
+        </div>
+      </div>
+      <div class="remark-input">
+        <label>Remark / Observed Value</label>
+        <input type="text" id="remark${f.n}" placeholder="Optional note for this feature…"/>
+      </div>
+    </div>
+  `;
+      grid.appendChild(card);
+    });
+
+    function toggleExpand(n, headerEl) {
+      const details = document.getElementById('details' + n);
+      const btn = headerEl.querySelector('.expand-btn');
+      const isOpen = details.classList.contains('open');
+      details.classList.toggle('open', !isOpen);
+      btn.classList.toggle('open', !isOpen);
+    }
+
+    function toggleCheck(n, cb) {
+      const card = cb.closest('.feature-card');
+      card.classList.toggle('is-checked', cb.checked);
+      updateCounter();
+    }
+
+    function setPill(n, val, el) {
+      el.closest('.status-pills').querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function updateCounter() {
+      const checked = document.querySelectorAll('.feature-card.is-checked').length;
+      document.getElementById('countChecked').textContent = checked;
+      document.getElementById('progressBar').style.width = (checked / 26 * 100) + '%';
+    }
+
+    // ─────────────────────────────────────────────
+    //  CUSTOM ENTRIES
+    // ─────────────────────────────────────────────
+    let customIdx = 0;
+    document.getElementById('addCustomBtn').addEventListener('click', addCustomEntry);
+
+    function addCustomEntry() {
+      customIdx++;
+      const list = document.getElementById('customList');
+      const row = document.createElement('div');
+      row.className = 'custom-entry';
+      row.dataset.idx = customIdx;
+      row.innerHTML = `
+    <input type="text" placeholder="Test Item / Feature name" class="c-name"/>
+    <input type="text" placeholder="Specification / Expected value" class="c-spec"/>
+    <select class="c-result">
+      <option value="">-- Result --</option>
+      <option value="PASS">✓ PASS</option>
+      <option value="FAIL">✗ FAIL</option>
+      <option value="N/A">N/A</option>
+    </select>
+    <button class="remove-btn" onclick="this.closest('.custom-entry').remove()" title="Remove">×</button>
+  `;
+      list.appendChild(row);
+    }
+
+    // ─────────────────────────────────────────────
+    //  SUBMIT
+    // ─────────────────────────────────────────────
+    async function handleSubmit() {
+      const code = document.getElementById('authCode').value.trim();
+      if (code !== 'SriSri') {
+        showMsg('error', '✗  Invalid authorization code.');
+        return;
+      }
+
+      const heading = document.getElementById('reportHeading').value.trim();
+      if (!heading) {
+        showMsg('error', '✗  Please enter a Report Heading before submitting.');
+        return;
+      }
+
+      const sheetUrl = document.getElementById('sheetUrl').value.trim();
+      if (!sheetUrl) {
+        showMsg('error', '✗  Please paste your Google Apps Script URL in the config bar at the top.');
+        return;
+      }
+
+      // Build feature summary
+      const featureRows = FEATURES.map(f => {
+        const cb = document.getElementById('cb' + f.n);
+        const pillActive = document.querySelector(`#details${f.n} .pill.active`);
+        const remark = document.getElementById('remark' + f.n).value.trim();
+        return {
+          sn: f.n,
+          function: f.fn,
+          spec: f.spec,
+          evidence: f.ev,
+          selected: cb.checked,
+          result: pillActive ? pillActive.textContent.trim() : '',
+          remark
+        };
+      });
+
+      // Custom items
+      const customRows = [];
+      document.querySelectorAll('.custom-entry').forEach(row => {
+        customRows.push({
+          name: row.querySelector('.c-name').value,
+          spec: row.querySelector('.c-spec').value,
+          result: row.querySelector('.c-result').value
+        });
+      });
+
+      const payload = {
+        heading,
+        tester: document.getElementById('testerName').value.trim(),
+        build: document.getElementById('buildVersion').value.trim(),
+        notes: document.getElementById('reportNotes').value.trim(),
+        checkedCount: featureRows.filter(r => r.selected).length,
+        summary: JSON.stringify(featureRows),
+        customItems: JSON.stringify(customRows),
+        timestamp: new Date().toISOString()
+      };
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      showMsg('loading', '⏳  Submitting data to Google Sheet…');
+
+      try {
+        const params = new URLSearchParams(payload);
+
+        await fetch(sheetUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          body: params
+        });
+
+        showMsg('success', '✓  Report submitted successfully to Google Sheet!');
+      } catch (err) {
+        showMsg('error', '✗  Submission failed: ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function showMsg(type, text) {
+      const el = document.getElementById('statusMsg');
+      el.className = 'status-msg ' + type;
+      el.textContent = text;
+    }
+
+    // Persist sheet URL across sessions
+    const savedUrl = localStorage.getItem('qaSheetUrl');
+    if (savedUrl) document.getElementById('sheetUrl').value = savedUrl;
+    document.getElementById('sheetUrl').addEventListener('input', e => {
+      localStorage.setItem('qaSheetUrl', e.target.value);
+    });
+  </script>
+</body>
+
+</html>
