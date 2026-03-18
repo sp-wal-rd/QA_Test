@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TestFlow — R&D · QC · Business Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#0d0f14;--bg2:#141720;--bg3:#1c2030;--bg4:#242840;
+    --border:#2a2f45;--border2:#363d5a;
+    --text:#e8eaf2;--text2:#8b90a8;--text3:#555c78;
+    --accent:#4f7cff;--accent2:#6b94ff;
+    --green:#2dd4a0;--green-bg:#0d2e26;--green-border:#1a5c47;
+    --red:#ff5c6a;--red-bg:#2e0d12;--red-border:#5c1a24;
+    --amber:#ffb740;--amber-bg:#2e2000;--amber-border:#5c4000;
+    --blue-bg:#0d1a2e;--blue-border:#1a2e5c;
+    --purple:#a855f7;--purple-bg:#1a0d2e;--purple-border:#3d1a5c;
+    --mono:'IBM Plex Mono',monospace;--display:'Syne',sans-serif;--body:'DM Sans',sans-serif;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--body);background:var(--bg);color:var(--text);min-height:100vh;}
+
+  /* SETUP SCREEN */
+  .setup-screen{
+    position:fixed;inset:0;background:var(--bg);z-index:500;
+    display:flex;align-items:center;justify-content:center;padding:1rem;
+  }
+  .setup-box{
+    background:var(--bg2);border:1px solid var(--border2);border-radius:16px;
+    padding:2.5rem;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;
+  }
+  .setup-logo{font-family:var(--display);font-weight:800;font-size:28px;margin-bottom:4px;}
+  .setup-logo span{color:var(--accent2);}
+  .step-num{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:24px;height:24px;border-radius:50%;background:var(--accent);
+    color:#fff;font-size:12px;font-weight:600;margin-right:10px;flex-shrink:0;
+  }
+  .step-row{display:flex;align-items:flex-start;margin-bottom:1.2rem;}
+  .step-content{flex:1;}
+  .step-title{font-size:14px;font-weight:500;margin-bottom:4px;}
+  .step-desc{font-size:12px;color:var(--text2);line-height:1.6;}
+  .code-block{
+    background:var(--bg3);border:1px solid var(--border);border-radius:7px;
+    padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--text2);
+    margin-top:8px;word-break:break-all;line-height:1.7;
+  }
+  .code-block b{color:var(--accent2);}
+  .link{color:var(--accent2);text-decoration:underline;cursor:pointer;}
+  .config-inputs{display:grid;grid-template-columns:1fr;gap:10px;margin:1rem 0;}
+
+  /* NAV */
+  .topnav{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 2rem;height:60px;
+    background:var(--bg2);border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:100;
+  }
+  .logo{font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:-0.5px;}
+  .logo span{color:var(--accent2);}
+  .nav-tabs{display:flex;gap:4px;}
+  .nav-tab{
+    padding:7px 18px;border-radius:7px;font-size:13px;font-weight:500;
+    cursor:pointer;border:1px solid transparent;transition:all 0.18s;color:var(--text2);
+  }
+  .nav-tab:hover{background:var(--bg3);color:var(--text);}
+  .nav-tab.active{background:var(--accent);color:#fff;border-color:var(--accent2);}
+  .nav-right{display:flex;align-items:center;gap:10px;}
+  .nav-role{font-family:var(--mono);font-size:11px;padding:5px 12px;border:1px solid var(--border2);border-radius:20px;color:var(--text2);}
+  .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);}
+  .sync-dot.live{background:var(--green);box-shadow:0 0 6px var(--green);}
+  .sync-label{font-family:var(--mono);font-size:11px;color:var(--text3);}
+
+  /* VIEWS */
+  .view{display:none;padding:2rem;max-width:1100px;margin:0 auto;}
+  .view.active{display:block;}
+  .section-title{font-family:var(--display);font-weight:700;font-size:22px;margin-bottom:4px;}
+  .section-sub{font-size:13px;color:var(--text2);margin-bottom:1.5rem;}
+
+  /* CARDS */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1rem;}
+  .card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.2rem;gap:1rem;}
+  .card-title{font-family:var(--display);font-weight:600;font-size:16px;}
+  .card-meta{font-size:12px;color:var(--text2);margin-top:3px;font-family:var(--mono);}
+
+  /* BADGES */
+  .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap;font-family:var(--mono);}
+  .badge-pending{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);}
+  .badge-inreview{background:var(--blue-bg);color:#6baaff;border:1px solid var(--blue-border);}
+  .badge-pass{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+  .badge-fail{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);}
+  .badge-rd{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border);}
+
+  /* FORMS */
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+  .form-full{margin-bottom:1rem;}
+  label{display:block;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;font-family:var(--mono);letter-spacing:0.3px;}
+  input,textarea,select{
+    width:100%;background:var(--bg3);border:1px solid var(--border2);
+    border-radius:7px;padding:10px 14px;font-size:14px;font-family:var(--body);
+    color:var(--text);outline:none;transition:border-color 0.15s;resize:vertical;
+  }
+  input:focus,textarea:focus,select:focus{border-color:var(--accent);}
+  select option{background:var(--bg3);}
+
+  /* TEST CASES */
+  .test-cases{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:1rem;}
+  .test-cases th{font-family:var(--mono);font-size:11px;font-weight:500;text-transform:uppercase;color:var(--text3);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);letter-spacing:0.5px;}
+  .test-cases td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
+  .test-cases tr:last-child td{border-bottom:none;}
+  .test-cases tr:hover td{background:var(--bg3);}
+  .tc-num{font-family:var(--mono);font-size:12px;color:var(--text3);width:60px;}
+  .tc-del{cursor:pointer;color:var(--text3);font-size:16px;text-align:center;width:36px;}
+  .tc-del:hover{color:var(--red);}
+  .tc-input-inline{background:transparent;border:none;border-bottom:1px solid var(--border);border-radius:0;padding:4px 6px;width:100%;font-size:13px;color:var(--text);font-family:var(--body);}
+  .tc-input-inline:focus{border-bottom-color:var(--accent);outline:none;}
+
+  /* BUTTONS */
+  .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;font-family:var(--body);}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:hover{background:var(--accent2);transform:translateY(-1px);}
+  .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2);}
+  .btn-ghost:hover{background:var(--bg3);color:var(--text);}
+  .btn-success{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+  .btn-success:hover{background:#1a4036;}
+  .btn-danger{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);}
+  .btn-danger:hover{background:#4a1620;}
+  .btn-sm{padding:6px 14px;font-size:12px;}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+
+  /* PRODUCT LIST */
+  .product-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem 1.5rem;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:1rem;transition:border-color 0.15s;}
+  .product-item:hover{border-color:var(--border2);}
+  .product-info{flex:1;}
+  .product-name{font-family:var(--display);font-weight:600;font-size:15px;margin-bottom:3px;}
+  .product-detail{font-size:12px;color:var(--text2);font-family:var(--mono);}
+  .product-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+
+  .divider{border:none;border-top:1px solid var(--border);margin:1.5rem 0;}
+
+  /* STATS */
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem;}
+  .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;}
+  .stat-label{font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:8px;letter-spacing:0.5px;text-transform:uppercase;}
+  .stat-value{font-family:var(--display);font-size:28px;font-weight:700;}
+  .stat-sub{font-size:12px;color:var(--text2);margin-top:4px;}
+
+  /* QC */
+  .qc-tc-row{background:var(--bg3);border-radius:7px;padding:12px;margin-bottom:8px;}
+  .qc-tc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .qc-tc-name{font-size:13px;font-weight:500;}
+  .qc-tc-goal{font-size:12px;color:var(--text2);margin-bottom:8px;}
+  .qc-result-toggle{display:flex;gap:6px;}
+  .toggle-btn{padding:5px 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--text2);transition:all 0.12s;font-family:var(--mono);}
+  .toggle-btn.pass.active{background:var(--green-bg);color:var(--green);border-color:var(--green-border);}
+  .toggle-btn.fail.active{background:var(--red-bg);color:var(--red);border-color:var(--red-border);}
+  .toggle-btn:hover{border-color:var(--border2);background:var(--bg4);}
+
+  .progress-track{background:var(--bg3);border-radius:4px;height:6px;overflow:hidden;margin:6px 0;}
+  .progress-fill{height:100%;border-radius:4px;transition:width 0.4s;background:var(--accent);}
+  .progress-fill.green{background:var(--green);}
+  .progress-fill.red{background:var(--red);}
+
+  .filter-bar{display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap;}
+  .filter-chip{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text2);transition:all 0.12s;font-family:var(--mono);}
+  .filter-chip:hover{background:var(--bg3);}
+  .filter-chip.active{border-color:var(--accent);color:var(--accent2);background:var(--blue-bg);}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:2rem;right:2rem;background:var(--bg2);border:1px solid var(--green-border);border-radius:var(--radius);padding:14px 20px;font-size:14px;color:var(--green);z-index:999;transform:translateY(80px);opacity:0;transition:all 0.3s;max-width:320px;}
+  .toast.show{transform:translateY(0);opacity:1;}
+  .toast.error{border-color:var(--red-border);color:var(--red);}
+
+  /* MODAL */
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;padding:1rem;}
+  .overlay.show{display:flex;}
+  .modal{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:2rem;width:100%;max-width:700px;max-height:90vh;overflow-y:auto;}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;}
+  .modal-close{cursor:pointer;color:var(--text2);font-size:22px;line-height:1;}
+  .modal-close:hover{color:var(--text);}
+
+  .empty{text-align:center;padding:3rem 1rem;color:var(--text3);}
+  .empty-icon{font-size:32px;margin-bottom:12px;opacity:0.4;}
+  .empty-text{font-size:14px;}
+
+  /* LOADING */
+  .loading-bar{height:2px;background:var(--accent);position:fixed;top:0;left:0;width:0;transition:width 0.3s;z-index:999;}
+
+  @media(max-width:700px){
+    .form-row{grid-template-columns:1fr;}
+    .stat-grid{grid-template-columns:1fr 1fr;}
+    .topnav{padding:0 1rem;}
+    .view{padding:1rem;}
+    .nav-tabs .nav-tab{padding:6px 12px;font-size:12px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-bar" id="loading-bar"></div>
+
+<!-- ===== SETUP SCREEN ===== -->
+<div class="setup-screen" id="setup-screen">
+  <div class="setup-box">
+    <div class="setup-logo">Test<span>Flow</span></div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:2rem;">One-time Firebase setup — takes about 5 minutes. Free forever for small teams.</div>
+
+    <div class="step-row">
+      <span class="step-num">1</span>
+      <div class="step-content">
+        <div class="step-title">Create a free Firebase project</div>
+        <div class="step-desc">Go to <span class="link" onclick="openLink('https://console.firebase.google.com')">console.firebase.google.com</span> → click <b>Add project</b> → name it (e.g. "TestFlow") → disable Google Analytics → click <b>Create project</b>.</div>
+      </div>
+    </div>
+
+    <div class="step-row">
+      <span class="step-num">2</span>
+      <div class="step-content">
+        <div class="step-title">Enable Firestore Database</div>
+        <div class="step-desc">In your project sidebar → <b>Build → Firestore Database</b> → click <b>Create database</b> → choose <b>Start in test mode</b> → pick any region → click <b>Enable</b>.</div>
+      </div>
+    </div>
+
+    <div class="step-row">
+      <span class="step-num">3</span>
+      <div class="step-content">
+        <div class="step-title">Register a Web App & get your config</div>
+        <div class="step-desc">In your project → click the <b>&lt;/&gt;</b> Web icon → name it "testflow-web" → click <b>Register app</b>. Copy the config object that appears — it looks like this:</div>
+        <div class="code-block">const firebaseConfig = {<br>&nbsp;&nbsp;<b>apiKey</b>: "AIzaSy...",<br>&nbsp;&nbsp;<b>authDomain</b>: "your-project.firebaseapp.com",<br>&nbsp;&nbsp;<b>projectId</b>: "your-project-id",<br>&nbsp;&nbsp;<b>storageBucket</b>: "your-project.appspot.com",<br>&nbsp;&nbsp;<b>messagingSenderId</b>: "123456789",<br>&nbsp;&nbsp;<b>appId</b>: "1:123:web:abc123"<br>};</div>
+      </div>
+    </div>
+
+    <div class="step-row">
+      <span class="step-num">4</span>
+      <div class="step-content">
+        <div class="step-title">Paste your config values below</div>
+        <div class="step-desc">Copy each value from your Firebase config and paste it here.</div>
+      </div>
+    </div>
+
+    <div class="config-inputs">
+      <div><label>API KEY</label><input id="cfg-apiKey" placeholder="AIzaSy..." /></div>
+      <div><label>AUTH DOMAIN</label><input id="cfg-authDomain" placeholder="your-project.firebaseapp.com" /></div>
+      <div><label>PROJECT ID</label><input id="cfg-projectId" placeholder="your-project-id" /></div>
+      <div><label>STORAGE BUCKET</label><input id="cfg-storageBucket" placeholder="your-project.appspot.com" /></div>
+      <div><label>MESSAGING SENDER ID</label><input id="cfg-messagingSenderId" placeholder="123456789" /></div>
+      <div><label>APP ID</label><input id="cfg-appId" placeholder="1:123:web:abc123" /></div>
+    </div>
+
+    <div style="background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:8px;padding:12px 16px;margin-bottom:1.5rem;font-size:12px;color:var(--text2);line-height:1.7;">
+      <b style="color:#6baaff;">How sharing works:</b> Once connected, this file is self-contained. Host it anywhere — Google Drive, Dropbox, a shared folder, a USB drive, a web server, GitHub Pages — and anyone who opens it will see the same live data. The config is saved in this browser only; each team member pastes it once.
+    </div>
+
+    <div id="setup-error" style="color:var(--red);font-size:13px;margin-bottom:1rem;display:none;"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="connectFirebase()">Connect & Launch →</button>
+      <button class="btn btn-ghost" onclick="loadDemo()">Try Demo Mode (local only)</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div id="main-app" style="display:none;">
+  <nav class="topnav">
+    <div class="logo">Test<span>Flow</span></div>
+    <div class="nav-tabs">
+      <div class="nav-tab active" onclick="switchTab('rd')">R&D</div>
+      <div class="nav-tab" onclick="switchTab('qc')">QC</div>
+      <div class="nav-tab" onclick="switchTab('business')">Business</div>
+    </div>
+    <div class="nav-right">
+      <div class="sync-dot" id="sync-dot"></div>
+      <div class="sync-label" id="sync-label">connecting...</div>
+      <div class="nav-role" id="role-badge">R&D Team</div>
+      <button class="btn btn-ghost btn-sm" onclick="reconfigure()" style="font-size:11px;padding:4px 10px;">⚙ Config</button>
+    </div>
+  </nav>
+
+  <!-- R&D VIEW -->
+  <div class="view active" id="view-rd">
+    <div class="section-title">Submit Product for Testing</div>
+    <div class="section-sub">Define test cases and goals — QC sees this instantly.</div>
+    <div class="card">
+      <div class="card-header" style="flex-direction:column;gap:0.2rem;">
+        <div style="display:flex;justify-content:space-between;width:100%;">
+          <span class="card-title">Product Details</span>
+          <span class="badge badge-rd">R&D Submission</span>
+        </div>
+      </div>
+      <div class="form-row">
+        <div><label>Product Name</label><input id="rd-product-name" placeholder="e.g. SmartSensor v2.1" /></div>
+        <div><label>Product ID / Build</label><input id="rd-product-id" placeholder="e.g. SS-2024-0211" /></div>
+      </div>
+      <div class="form-row">
+        <div><label>Team / Module</label><input id="rd-team" placeholder="e.g. Hardware · Firmware" /></div>
+        <div><label>Priority</label>
+          <select id="rd-priority">
+            <option value="critical">Critical</option>
+            <option value="high" selected>High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-full">
+        <label>Product Description</label>
+        <textarea id="rd-desc" rows="2" placeholder="Brief description of what this product does and what changed in this build..."></textarea>
+      </div>
+      <hr class="divider"/>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <span class="card-title" style="font-size:14px;">Test Cases</span>
+        <button class="btn btn-ghost btn-sm" onclick="addTestCase()">+ Add Test Case</button>
+      </div>
+      <table class="test-cases">
+        <thead><tr><th class="tc-num">#</th><th>Test Case Name</th><th>Goal to Achieve</th><th>Type</th><th></th></tr></thead>
+        <tbody id="tc-body"></tbody>
+      </table>
+      <div class="btn-row" style="margin-top:1rem;">
+        <button class="btn btn-primary" onclick="submitToQC()">Submit to QC →</button>
+        <button class="btn btn-ghost" onclick="clearRDForm()">Clear</button>
+      </div>
+    </div>
+    <hr class="divider"/>
+    <div class="section-title" style="font-size:17px;margin-bottom:0.3rem;">Your Submitted Products</div>
+    <div class="section-sub">Live — updates automatically when QC responds.</div>
+    <div id="rd-submissions-list"></div>
+  </div>
+
+  <!-- QC VIEW -->
+  <div class="view" id="view-qc">
+    <div class="section-title">QC Testing Queue</div>
+    <div class="section-sub">Live queue — new submissions from R&D appear here instantly.</div>
+    <div class="filter-bar">
+      <button class="filter-chip active" onclick="filterQC('all',this)">All</button>
+      <button class="filter-chip" onclick="filterQC('pending',this)">Pending</button>
+      <button class="filter-chip" onclick="filterQC('inreview',this)">In Review</button>
+      <button class="filter-chip" onclick="filterQC('pass',this)">Passed</button>
+      <button class="filter-chip" onclick="filterQC('fail',this)">Failed</button>
+    </div>
+    <div id="qc-list"></div>
+  </div>
+
+  <!-- BUSINESS VIEW -->
+  <div class="view" id="view-business">
+    <div class="section-title">Product Status Dashboard</div>
+    <div class="section-sub">Live overview — no need to ask R&D or QC for updates.</div>
+    <div class="stat-grid" id="stat-grid"></div>
+    <div class="filter-bar">
+      <button class="filter-chip active" onclick="filterBiz('all',this)">All Products</button>
+      <button class="filter-chip" onclick="filterBiz('pending',this)">Pending QC</button>
+      <button class="filter-chip" onclick="filterBiz('inreview',this)">In Review</button>
+      <button class="filter-chip" onclick="filterBiz('pass',this)">Passed</button>
+      <button class="filter-chip" onclick="filterBiz('fail',this)">Failed</button>
+    </div>
+    <div id="biz-list"></div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="overlay" id="detail-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="card-title" id="detail-title">Product Details</span>
+      <span class="modal-close" onclick="closeDetail()">×</span>
+    </div>
+    <div id="detail-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, doc, setDoc, onSnapshot, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+window._fb = { initializeApp, getFirestore, collection, doc, setDoc, onSnapshot, updateDoc };
+
+// ---- STATE ----
+let products = [];
+let db = null;
+let isDemo = false;
+let unsubscribe = null;
+let tcRows = [], tcCounter = 0;
+let currentFilter = {qc:'all', biz:'all'};
+
+function openLink(url) { window.open(url, '_blank'); }
+window.openLink = openLink;
+
+// ---- FIREBASE ----
+function connectFirebase() {
+  const fields = ['apiKey','authDomain','projectId','storageBucket','messagingSenderId','appId'];
+  const cfg = {};
+  for (const f of fields) {
+    const v = document.getElementById('cfg-' + f).value.trim();
+    if (!v) { showSetupError('Please fill in all fields.'); return; }
+    cfg[f] = v;
+  }
+  localStorage.setItem('testflow_cfg', JSON.stringify(cfg));
+  launchWithConfig(cfg);
+}
+window.connectFirebase = connectFirebase;
+
+function launchWithConfig(cfg) {
+  try {
+    const app = window._fb.initializeApp(cfg, 'testflow-' + Date.now());
+    db = window._fb.getFirestore(app);
+    isDemo = false;
+    showApp();
+    startSync();
+  } catch(e) {
+    showSetupError('Firebase error: ' + e.message);
+  }
+}
+
+function startSync() {
+  if (unsubscribe) unsubscribe();
+  setSyncStatus('connecting');
+  const col = window._fb.collection(db, 'products');
+  unsubscribe = window._fb.onSnapshot(col, (snap) => {
+    products = [];
+    snap.forEach(d => products.push(d.data()));
+    products.sort((a,b) => (b.submittedAt||'').localeCompare(a.submittedAt||''));
+    setSyncStatus('live');
+    refreshCurrentView();
+  }, (err) => {
+    setSyncStatus('error');
+    showToast('Sync error: ' + err.message, true);
+  });
+}
+
+async function saveProduct(p) {
+  if (isDemo) { save(); return; }
+  try {
+    await window._fb.setDoc(window._fb.doc(db, 'products', p.id), p);
+  } catch(e) { showToast('Save failed: ' + e.message, true); }
+}
+
+function loadDemo() {
+  isDemo = true;
+  products = JSON.parse(localStorage.getItem('testflow_products') || '[]');
+  showApp();
+  setSyncStatus('demo');
+  refreshCurrentView();
+}
+window.loadDemo = loadDemo;
+
+function save() { if (isDemo) localStorage.setItem('testflow_products', JSON.stringify(products)); }
+
+function reconfigure() {
+  document.getElementById('setup-screen').style.display = 'flex';
+  document.getElementById('main-app').style.display = 'none';
+  const cfg = JSON.parse(localStorage.getItem('testflow_cfg') || '{}');
+  Object.keys(cfg).forEach(k => { const el = document.getElementById('cfg-' + k); if (el) el.value = cfg[k]; });
+}
+window.reconfigure = reconfigure;
+
+function showApp() {
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+}
+
+function setSyncStatus(s) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  dot.className = 'sync-dot' + (s === 'live' ? ' live' : '');
+  lbl.textContent = s === 'live' ? 'live sync' : s === 'demo' ? 'demo mode' : s === 'error' ? 'sync error' : 'connecting...';
+  lbl.style.color = s === 'live' ? 'var(--green)' : s === 'error' ? 'var(--red)' : s === 'demo' ? 'var(--amber)' : 'var(--text3)';
+}
+
+function showSetupError(msg) {
+  const el = document.getElementById('setup-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+// Auto-connect if config saved
+const savedCfg = localStorage.getItem('testflow_cfg');
+if (savedCfg) { try { launchWithConfig(JSON.parse(savedCfg)); } catch(e) {} }
+
+// ---- TABS ----
+function switchTab(tab) {
+  document.querySelectorAll('.nav-tab').forEach((el,i) => el.classList.toggle('active', ['rd','qc','business'][i] === tab));
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-' + tab).classList.add('active');
+  const labels = {rd:'R&D Team', qc:'QC Team', business:'Business Team'};
+  document.getElementById('role-badge').textContent = labels[tab];
+  if (tab === 'qc') renderQCList();
+  if (tab === 'business') renderBiz();
+  if (tab === 'rd') renderRDSubmissions();
+}
+window.switchTab = switchTab;
+
+function refreshCurrentView() {
+  const active = document.querySelector('.nav-tab.active');
+  const tabs = [...document.querySelectorAll('.nav-tab')];
+  const idx = tabs.indexOf(active);
+  const names = ['rd','qc','business'];
+  if (idx >= 0) {
+    if (names[idx] === 'rd') renderRDSubmissions();
+    if (names[idx] === 'qc') renderQCList();
+    if (names[idx] === 'business') renderBiz();
+  }
+}
+
+// ---- R&D FORM ----
+function addTestCase() {
+  tcCounter++;
+  const n = tcCounter;
+  tcRows.push(n);
+  const tr = document.createElement('tr');
+  tr.id = 'tc-row-' + n;
+  tr.innerHTML = `<td class="tc-num">#${String(n).padStart(2,'0')}</td>
+    <td><input class="tc-input-inline" id="tc-name-${n}" placeholder="e.g. Load test at 100 req/s"/></td>
+    <td><input class="tc-input-inline" id="tc-goal-${n}" placeholder="e.g. Response time < 200ms, no errors"/></td>
+    <td><select id="tc-type-${n}" style="background:var(--bg4);border:1px solid var(--border2);border-radius:5px;padding:4px 8px;font-size:12px;color:var(--text);font-family:var(--mono);">
+      <option>Functional</option><option>Performance</option><option>Security</option>
+      <option>Regression</option><option>Integration</option><option>UI/UX</option><option>Stress</option>
+    </select></td>
+    <td class="tc-del" onclick="removeTC(${n})">✕</td>`;
+  document.getElementById('tc-body').appendChild(tr);
+}
+window.addTestCase = addTestCase;
+
+function removeTC(n) { document.getElementById('tc-row-' + n)?.remove(); tcRows = tcRows.filter(x => x !== n); }
+window.removeTC = removeTC;
+
+function clearRDForm() {
+  ['rd-product-name','rd-product-id','rd-team','rd-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('rd-priority').value = 'high';
+  document.getElementById('tc-body').innerHTML = '';
+  tcRows = []; tcCounter = 0;
+}
+window.clearRDForm = clearRDForm;
+
+async function submitToQC() {
+  const name = document.getElementById('rd-product-name').value.trim();
+  const pid = document.getElementById('rd-product-id').value.trim();
+  if (!name || !pid) { showToast('Product name and ID are required.', true); return; }
+  const tcs = tcRows.map(n => ({
+    id: String(n),
+    name: document.getElementById('tc-name-' + n)?.value.trim() || '',
+    goal: document.getElementById('tc-goal-' + n)?.value.trim() || '',
+    type: document.getElementById('tc-type-' + n)?.value || 'Functional',
+    result: null, note: ''
+  })).filter(tc => tc.name);
+  if (!tcs.length) { showToast('Add at least one test case.', true); return; }
+  const product = {
+    id: 'PROD-' + Date.now(),
+    name, pid,
+    team: document.getElementById('rd-team').value.trim(),
+    desc: document.getElementById('rd-desc').value.trim(),
+    priority: document.getElementById('rd-priority').value,
+    status: 'pending',
+    testCases: tcs,
+    submittedAt: new Date().toISOString(),
+    qcNote: '', qcEngineer: '', qcCompletedAt: null
+  };
+  setLoading(true);
+  await saveProduct(product);
+  if (isDemo) { products.unshift(product); renderRDSubmissions(); }
+  setLoading(false);
+  showToast(`✓ "${name}" submitted — QC will see it instantly`);
+  clearRDForm();
+}
+window.submitToQC = submitToQC;
+
+function renderRDSubmissions() {
+  const el = document.getElementById('rd-submissions-list');
+  if (!products.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No products submitted yet.</div></div>'; return; }
+  el.innerHTML = products.map(p => `
+    <div class="product-item">
+      <div class="product-info">
+        <div class="product-name">${esc(p.name)}</div>
+        <div class="product-detail">${esc(p.pid)} · ${p.testCases.length} test cases · ${fmtDate(p.submittedAt)}</div>
+      </div>
+      <div class="product-actions">${statusBadge(p.status)}<button class="btn btn-ghost btn-sm" onclick="openDetail('${p.id}')">View →</button></div>
+    </div>`).join('');
+}
+
+// ---- QC ----
+function filterQC(f, el) {
+  currentFilter.qc = f;
+  document.querySelectorAll('#view-qc .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active'); renderQCList();
+}
+window.filterQC = filterQC;
+
+function renderQCList() {
+  const el = document.getElementById('qc-list');
+  let list = products;
+  if (currentFilter.qc !== 'all') list = list.filter(p => p.status === currentFilter.qc);
+  if (!list.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🧪</div><div class="empty-text">Nothing here yet.</div></div>'; return; }
+  el.innerHTML = list.map(p => renderQCCard(p)).join('');
+}
+
+function renderQCCard(p) {
+  const passed = p.testCases.filter(t=>t.result==='pass').length;
+  const failed = p.testCases.filter(t=>t.result==='fail').length;
+  const pct = p.testCases.length ? Math.round((passed/p.testCases.length)*100) : 0;
+  const isLocked = p.status === 'pass' || p.status === 'fail';
+  const tcHtml = p.testCases.map(tc => `
+    <div class="qc-tc-row">
+      <div class="qc-tc-head">
+        <div>
+          <div class="qc-tc-name">${esc(tc.name)} <span style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-left:6px;">[${tc.type}]</span></div>
+          <div class="qc-tc-goal">Goal: ${esc(tc.goal)}</div>
+        </div>
+        <div class="qc-result-toggle">
+          <button class="toggle-btn pass ${tc.result==='pass'?'active':''}" onclick="setTCResult('${p.id}','${tc.id}','pass')">PASS</button>
+          <button class="toggle-btn fail ${tc.result==='fail'?'active':''}" onclick="setTCResult('${p.id}','${tc.id}','fail')">FAIL</button>
+        </div>
+      </div>
+      <input class="tc-input-inline" placeholder="QC note for this test case..." value="${esc(tc.note||'')}"
+        onchange="setTCNote('${p.id}','${tc.id}',this.value)"
+        style="background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:6px 10px;font-size:12px;" ${isLocked?'disabled':''}/>
+    </div>`).join('');
+  return `
+    <div class="card" id="qc-card-${p.id}">
+      <div class="card-header">
+        <div>
+          <div class="card-title">${esc(p.name)}</div>
+          <div class="card-meta">${esc(p.pid)} · ${fmtDate(p.submittedAt)} · ${esc(p.team||'R&D')} · ${priorityTag(p.priority)}</div>
+        </div>
+        ${statusBadge(p.status)}
+      </div>
+      ${p.desc ? `<div style="font-size:13px;color:var(--text2);margin-bottom:1rem;padding:10px 12px;background:var(--bg3);border-radius:7px;border-left:3px solid var(--accent);">${esc(p.desc)}</div>` : ''}
+      <div style="display:flex;gap:2rem;font-size:12px;font-family:var(--mono);color:var(--text2);margin-bottom:1rem;">
+        <span><span style="color:var(--text);">${p.testCases.length}</span> total</span>
+        <span style="color:var(--green);">✓ ${passed} passed</span>
+        <span style="color:var(--red);">✗ ${failed} failed</span>
+        <span><span style="color:var(--accent2);">${pct}%</span> done</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill ${pct===100?(failed?'red':'green'):''}" style="width:${pct}%"></div></div>
+      <div style="margin:1rem 0;">${tcHtml}</div>
+      <hr class="divider"/>
+      <div class="form-row">
+        <div><label>QC Engineer Name</label><input id="qce-${p.id}" placeholder="Your name" value="${esc(p.qcEngineer||'')}" onchange="updateField('${p.id}','qcEngineer',this.value)" ${isLocked?'disabled':''}/></div>
+        <div><label>Overall QC Note</label><input id="qcn-${p.id}" placeholder="Summary note..." value="${esc(p.qcNote||'')}" onchange="updateField('${p.id}','qcNote',this.value)" ${isLocked?'disabled':''}/></div>
+      </div>
+      ${!isLocked ? `<div class="btn-row">
+        <button class="btn btn-success" onclick="finalSubmitQC('${p.id}','pass')">✓ Submit as PASSED</button>
+        <button class="btn btn-danger" onclick="finalSubmitQC('${p.id}','fail')">✗ Submit as FAILED</button>
+        <button class="btn btn-ghost btn-sm" onclick="markInReview('${p.id}')">Mark In Review</button>
+      </div>` : `<div style="font-size:13px;color:var(--text2);font-family:var(--mono);">Submitted ${fmtDate(p.qcCompletedAt)} by ${esc(p.qcEngineer||'QC')}. <button class="btn btn-ghost btn-sm" style="margin-left:8px;" onclick="unlockQC('${p.id}')">Reopen</button></div>`}
+    </div>`;
+}
+
+async function setTCResult(pid, tcId, result) {
+  const p = products.find(x => x.id === pid);
+  if (!p || p.status==='pass' || p.status==='fail') return;
+  const tc = p.testCases.find(t => t.id === tcId);
+  if (!tc) return;
+  tc.result = tc.result === result ? null : result;
+  await saveProduct(p);
+  if (isDemo) renderQCList();
+}
+window.setTCResult = setTCResult;
+
+async function setTCNote(pid, tcId, val) {
+  const p = products.find(x => x.id === pid);
+  if (!p) return;
+  const tc = p.testCases.find(t => t.id === tcId);
+  if (tc) { tc.note = val; await saveProduct(p); }
+}
+window.setTCNote = setTCNote;
+
+async function updateField(pid, field, val) {
+  const p = products.find(x => x.id === pid);
+  if (p) { p[field] = val; await saveProduct(p); }
+}
+window.updateField = updateField;
+
+async function markInReview(pid) {
+  const p = products.find(x => x.id === pid);
+  if (p && p.status === 'pending') { p.status = 'inreview'; await saveProduct(p); showToast('Marked as In Review'); if (isDemo) renderQCList(); }
+}
+window.markInReview = markInReview;
+
+async function unlockQC(pid) {
+  const p = products.find(x => x.id === pid);
+  if (p) { p.status = 'inreview'; p.qcCompletedAt = null; await saveProduct(p); showToast('Report reopened'); if (isDemo) renderQCList(); }
+}
+window.unlockQC = unlockQC;
+
+async function finalSubmitQC(pid, result) {
+  const p = products.find(x => x.id === pid);
+  if (!p) return;
+  const unanswered = p.testCases.filter(t => !t.result).length;
+  if (unanswered > 0) { showToast(`${unanswered} test case(s) still unresolved.`, true); return; }
+  p.status = result; p.qcCompletedAt = new Date().toISOString();
+  setLoading(true);
+  await saveProduct(p);
+  setLoading(false);
+  showToast(`Report submitted — ${p.name} marked ${result.toUpperCase()}`);
+  if (isDemo) renderQCList();
+}
+window.finalSubmitQC = finalSubmitQC;
+
+// ---- BUSINESS ----
+function filterBiz(f, el) {
+  currentFilter.biz = f;
+  document.querySelectorAll('#view-business .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active'); renderBiz();
+}
+window.filterBiz = filterBiz;
+
+function renderBiz() {
+  const total = products.length;
+  const passed = products.filter(p=>p.status==='pass').length;
+  const failed = products.filter(p=>p.status==='fail').length;
+  const pending = products.filter(p=>p.status==='pending'||p.status==='inreview').length;
+  document.getElementById('stat-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Products</div><div class="stat-value" style="color:var(--text);">${total}</div><div class="stat-sub">all submissions</div></div>
+    <div class="stat-card"><div class="stat-label">Passed QC</div><div class="stat-value" style="color:var(--green);">${passed}</div><div class="stat-sub">${total ? Math.round(passed/total*100) : 0}% success rate</div></div>
+    <div class="stat-card"><div class="stat-label">Failed QC</div><div class="stat-value" style="color:var(--red);">${failed}</div><div class="stat-sub">${total ? Math.round(failed/total*100) : 0}% failure rate</div></div>
+    <div class="stat-card"><div class="stat-label">In Queue</div><div class="stat-value" style="color:var(--amber);">${pending}</div><div class="stat-sub">awaiting QC</div></div>`;
+  const el = document.getElementById('biz-list');
+  let list = products;
+  if (currentFilter.biz !== 'all') list = list.filter(p => currentFilter.biz === 'pending' ? (p.status==='pending'||p.status==='inreview') : p.status === currentFilter.biz);
+  if (!list.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No products match this filter.</div></div>'; return; }
+  el.innerHTML = list.map(p => {
+    const pass = p.testCases.filter(t=>t.result==='pass').length;
+    const tot = p.testCases.length;
+    const pct = tot ? Math.round(pass/tot*100) : 0;
+    return `<div class="product-item" style="flex-direction:column;align-items:flex-start;gap:0.8rem;">
+      <div style="display:flex;justify-content:space-between;width:100%;align-items:center;gap:1rem;flex-wrap:wrap;">
+        <div><div class="product-name">${esc(p.name)}</div><div class="product-detail">${esc(p.pid)} · ${esc(p.team||'R&D')} · ${fmtDate(p.submittedAt)} · ${priorityTag(p.priority)}</div></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">${statusBadge(p.status)}<button class="btn btn-ghost btn-sm" onclick="openDetail('${p.id}')">View Report →</button></div>
+      </div>
+      ${p.desc ? `<div style="font-size:12px;color:var(--text2);">${esc(p.desc)}</div>` : ''}
+      <div style="width:100%;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:4px;"><span>Test progress</span><span>${pass}/${tot} resolved</span></div>
+        <div class="progress-track"><div class="progress-fill ${p.status==='pass'?'green':p.status==='fail'?'red':''}" style="width:${pct}%"></div></div>
+      </div>
+      ${p.qcNote ? `<div style="font-size:12px;color:var(--text2);font-family:var(--mono);">QC Note: "${esc(p.qcNote)}"${p.qcEngineer?' — '+esc(p.qcEngineer):''}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ---- DETAIL MODAL ----
+function openDetail(pid) {
+  const p = products.find(x => x.id === pid);
+  if (!p) return;
+  document.getElementById('detail-title').textContent = p.name + ' — Full Report';
+  const passed = p.testCases.filter(t=>t.result==='pass').length;
+  const failed = p.testCases.filter(t=>t.result==='fail').length;
+  document.getElementById('detail-body').innerHTML = `
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:1.5rem;">${statusBadge(p.status)}<span style="font-size:13px;color:var(--text2);font-family:var(--mono);">${esc(p.pid)}</span><span style="font-size:13px;color:var(--text2);font-family:var(--mono);">${priorityTag(p.priority)}</span></div>
+    ${p.desc ? `<div style="font-size:13px;color:var(--text2);margin-bottom:1.2rem;padding:10px 14px;background:var(--bg3);border-radius:7px;border-left:3px solid var(--accent);">${esc(p.desc)}</div>` : ''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem;">
+      <div class="stat-card"><div class="stat-label">Team</div><div style="font-size:15px;font-weight:500;margin-top:4px;">${esc(p.team||'—')}</div></div>
+      <div class="stat-card"><div class="stat-label">Submitted</div><div style="font-size:15px;font-weight:500;margin-top:4px;">${fmtDate(p.submittedAt)}</div></div>
+      <div class="stat-card"><div class="stat-label">Passed</div><div style="font-size:22px;font-weight:700;color:var(--green);">${passed}</div></div>
+      <div class="stat-card"><div class="stat-label">Failed</div><div style="font-size:22px;font-weight:700;color:var(--red);">${failed}</div></div>
+    </div>
+    <div style="font-family:var(--mono);font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Test Cases</div>
+    ${p.testCases.map(tc => `
+      <div style="background:var(--bg3);border-radius:8px;padding:12px 14px;margin-bottom:8px;border-left:3px solid ${tc.result==='pass'?'var(--green)':tc.result==='fail'?'var(--red)':'var(--border2)'};">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+          <div><span style="font-size:13px;font-weight:500;">${esc(tc.name)}</span><span style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-left:8px;">[${tc.type}]</span></div>
+          ${tc.result ? `<span class="badge ${tc.result==='pass'?'badge-pass':'badge-fail'}">${tc.result==='pass'?'✓ PASS':'✗ FAIL'}</span>` : '<span class="badge badge-pending">Pending</span>'}
+        </div>
+        <div style="font-size:12px;color:var(--text2);${tc.note?'margin-bottom:6px':''}">Goal: ${esc(tc.goal)}</div>
+        ${tc.note ? `<div style="font-size:12px;color:var(--text2);font-family:var(--mono);">Note: ${esc(tc.note)}</div>` : ''}
+      </div>`).join('')}
+    ${p.qcNote ? `<div style="margin-top:1rem;padding:12px 14px;background:var(--bg3);border-radius:8px;border-left:3px solid var(--amber);">
+      <div style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:4px;">QC OVERALL NOTE</div>
+      <div style="font-size:13px;">${esc(p.qcNote)}</div>
+      ${p.qcEngineer?`<div style="font-size:12px;color:var(--text2);margin-top:4px;font-family:var(--mono);">— ${esc(p.qcEngineer)} · ${fmtDate(p.qcCompletedAt)}</div>`:''}
+    </div>` : ''}`;
+  document.getElementById('detail-overlay').classList.add('show');
+}
+window.openDetail = openDetail;
+
+function closeDetail() { document.getElementById('detail-overlay').classList.remove('show'); }
+window.closeDetail = closeDetail;
+
+// ---- UTILS ----
+function showToast(msg, error=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show' + (error ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 2800);
+}
+function setLoading(on) { document.getElementById('loading-bar').style.width = on ? '70%' : '100%'; if (!on) setTimeout(() => document.getElementById('loading-bar').style.width = '0', 300); }
+function statusBadge(s) {
+  const map = {pending:'badge-pending·pending',inreview:'badge-inreview·in review',pass:'badge-pass·passed',fail:'badge-fail·failed'};
+  const [cls, lbl] = (map[s]||'badge-pending·pending').split('·');
+  return `<span class="badge ${cls}">${lbl}</span>`;
+}
+function priorityTag(p) {
+  const c = {critical:'var(--red)',high:'var(--amber)',medium:'var(--accent2)',low:'var(--text3)'};
+  return `<span style="color:${c[p]||'var(--text2)'};font-family:var(--mono);font-size:11px;">${(p||'').toUpperCase()}</span>`;
+}
+function fmtDate(iso) { if (!iso) return '—'; return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+document.getElementById('detail-overlay').addEventListener('click', function(e) { if (e.target===this) closeDetail(); });
+</script>
+</body>
+</html>
