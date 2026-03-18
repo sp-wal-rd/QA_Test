@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>WalMet — QC Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0a0c10;--bg2:#111318;--bg3:#181b24;--bg4:#1e2230;
+  --border:#222636;--border2:#2e3450;
+  --text:#e4e6f0;--text2:#7e84a0;--text3:#454d68;
+  --accent:#3d6fff;--accent2:#5c87ff;
+  --green:#1ec98a;--gbg:#071f17;--gborder:#0f4030;
+  --red:#f04f5e;--rbg:#200810;--rborder:#4a101e;
+  --amber:#f0a030;--abg:#1e1400;--aborder:#4a3000;
+  --blbg:#070f20;--blborder:#102040;
+  --teal:#00c2cb;--tbg:#001e20;--tborder:#004048;
+  --mono:'IBM Plex Mono',monospace;
+  --disp:'Syne',sans-serif;
+  --body:'DM Sans',sans-serif;
+  --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--body);background:var(--bg);color:var(--text);min-height:100vh;}
+/* SCREENS — all hidden by default, JS shows the right one */
+.screen{display:none;position:fixed;inset:0;z-index:100;align-items:center;justify-content:center;padding:1rem;background:var(--bg);}
+.screen.on{display:flex;}
+/* OVERLAY PANELS */
+.panel{display:none;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;padding:1rem;background:rgba(0,0,0,.8);}
+.panel.on{display:flex;}
+.pbox{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:2rem;width:100%;max-width:420px;}
+.pbox.wide{max-width:600px;max-height:88vh;overflow-y:auto;}
+/* GATE */
+.gate-box{background:var(--bg2);border:1px solid var(--border2);border-radius:18px;padding:2.5rem;width:100%;max-width:420px;text-align:center;}
+.brand{font-family:var(--disp);font-weight:800;font-size:34px;letter-spacing:-1px;}
+.brand span{color:var(--accent2);}
+.sub{font-size:12px;color:var(--text2);font-family:var(--mono);margin-bottom:2rem;}
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.4rem;}
+.rbtn{padding:18px 8px;border-radius:12px;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);display:flex;flex-direction:column;align-items:center;gap:7px;transition:all .15s;}
+.rbtn:hover{border-color:var(--accent);background:var(--bg4);}
+.rbtn.sel{border-color:var(--accent);background:var(--blbg);box-shadow:0 0 0 1px var(--accent);}
+.ricon{font-size:20px;}
+.rname{font-size:13px;font-weight:500;}
+.rdesc{font-size:10px;color:var(--text3);font-family:var(--mono);}
+.enter-btn{width:100%;padding:13px;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;border:none;background:var(--accent);color:#fff;font-family:var(--body);transition:background .15s;margin-bottom:.8rem;}
+.enter-btn:hover{background:var(--accent2);}
+.enter-btn:disabled{opacity:.35;cursor:not-allowed;}
+.admin-link{font-size:11px;color:var(--text3);cursor:pointer;font-family:var(--mono);}
+.admin-link:hover{color:var(--text2);}
+/* PIN */
+.pin-title{font-family:var(--disp);font-size:20px;text-align:center;margin-bottom:4px;}
+.pin-sub{font-size:12px;color:var(--text2);font-family:var(--mono);text-align:center;margin-bottom:1.4rem;}
+.pin-dots{display:flex;gap:12px;justify-content:center;margin-bottom:1rem;}
+.pd{width:16px;height:16px;border-radius:50%;border:1px solid var(--border2);background:transparent;transition:background .1s;}
+.pd.on{background:var(--accent);border-color:var(--accent);}
+.pin-err{min-height:18px;font-size:12px;color:var(--red);font-family:var(--mono);text-align:center;margin-bottom:.8rem;}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem;}
+.kbtn{padding:14px;border-radius:9px;font-size:18px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-family:var(--mono);transition:all .1s;}
+.kbtn:hover{background:var(--bg4);}
+.kbtn:active{transform:scale(.94);}
+.cancel{font-size:12px;color:var(--text3);cursor:pointer;font-family:var(--mono);text-align:center;display:block;}
+.cancel:hover{color:var(--text2);}
+/* CONFIG */
+.cfg-title{font-family:var(--disp);font-size:22px;margin-bottom:3px;}
+.cfg-badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-family:var(--mono);background:var(--rbg);color:var(--red);border:1px solid var(--rborder);margin-bottom:1rem;}
+.info-box{background:var(--blbg);border:1px solid var(--blborder);border-radius:8px;padding:11px 14px;font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:1.2rem;}
+.info-box b{color:#6baaff;}
+.cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem;}
+.cfg-err{color:var(--red);font-size:12px;font-family:var(--mono);min-height:18px;margin-bottom:.6rem;}
+/* TOPNAV */
+#app{display:none;}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:56px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;}
+.nav-brand{display:flex;align-items:center;gap:10px;}
+.nav-logo{font-family:var(--disp);font-size:18px;font-weight:800;}
+.nav-logo span{color:var(--accent2);}
+.nav-div{width:1px;height:18px;background:var(--border2);}
+.nav-sub{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.nav-tabs{display:flex;gap:3px;}
+.tab{padding:6px 15px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid transparent;color:var(--text2);transition:all .15s;}
+.tab:hover{background:var(--bg3);color:var(--text);}
+.tab.on{background:var(--accent);color:#fff;}
+.nav-r{display:flex;align-items:center;gap:9px;}
+.sync{display:flex;align-items:center;gap:5px;}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--text3);}
+.sdot.live{background:var(--green);}
+.slbl{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.role-pill{font-family:var(--mono);font-size:10px;padding:3px 9px;border:1px solid var(--border2);border-radius:20px;color:var(--text2);}
+.sw-btn{font-size:11px;color:var(--text3);cursor:pointer;font-family:var(--mono);padding:3px 8px;border-radius:5px;border:1px solid var(--border);}
+.sw-btn:hover{color:var(--text2);background:var(--bg3);}
+/* VIEWS */
+.view{display:none;padding:2rem;max-width:1100px;margin:0 auto;}
+.view.on{display:block;}
+.ph{margin-bottom:1.6rem;}
+.pt{font-family:var(--disp);font-size:22px;margin-bottom:3px;}
+.ps{font-size:13px;color:var(--text2);}
+/* FORM ELEMENTS */
+lbl,label{display:block;font-size:10px;font-weight:500;color:var(--text2);margin-bottom:5px;font-family:var(--mono);letter-spacing:.3px;text-transform:uppercase;}
+input,textarea,select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:9px 12px;font-size:13px;font-family:var(--body);color:var(--text);outline:none;transition:border-color .14s;resize:vertical;}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);}
+select option{background:var(--bg3);}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:.9rem;}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:.9rem;}
+.ff{margin-bottom:.9rem;}
+/* CARD */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.4rem;margin-bottom:.9rem;}
+.ct{font-family:var(--disp);font-size:15px;font-weight:700;}
+.cm{font-size:11px;color:var(--text2);font-family:var(--mono);margin-top:2px;}
+/* DIVIDER */
+.sd{display:flex;align-items:center;gap:10px;margin:1.2rem 0 .9rem;}
+.sl{flex:1;height:1px;background:var(--border);}
+.st{font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+/* TABLE */
+.tct{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:.9rem;}
+.tct th{font-family:var(--mono);font-size:10px;color:var(--text3);padding:6px 9px;text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px;}
+.tct td{padding:8px 9px;border-bottom:1px solid var(--border);vertical-align:top;}
+.tct tr:last-child td{border-bottom:none;}
+.tct tr:hover td{background:var(--bg3);}
+.tci{background:transparent;border:none;border-bottom:1px solid var(--border);border-radius:0;padding:3px 4px;width:100%;font-size:12px;color:var(--text);font-family:var(--body);}
+.tci:focus{border-bottom-color:var(--accent);outline:none;}
+.tcs{background:var(--bg4);border:1px solid var(--border2);border-radius:5px;padding:3px 6px;font-size:11px;color:var(--text);font-family:var(--mono);}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:var(--body);transition:all .13s;}
+.bp{background:var(--accent);color:#fff;}
+.bp:hover{background:var(--accent2);}
+.bg{background:transparent;color:var(--text2);border:1px solid var(--border2);}
+.bg:hover{background:var(--bg3);color:var(--text);}
+.bs{background:var(--gbg);color:var(--green);border:1px solid var(--gborder);}
+.bs:hover{background:#0d3022;}
+.bd{background:var(--rbg);color:var(--red);border:1px solid var(--rborder);}
+.bd:hover{background:#380c18;}
+.bsm{padding:4px 12px;font-size:11px;}
+.brow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+/* BADGE */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:500;white-space:nowrap;font-family:var(--mono);}
+.b-pend{background:var(--abg);color:var(--amber);border:1px solid var(--aborder);}
+.b-rev{background:var(--blbg);color:#5c9fff;border:1px solid var(--blborder);}
+.b-pass{background:var(--gbg);color:var(--green);border:1px solid var(--gborder);}
+.b-fail{background:var(--rbg);color:var(--red);border:1px solid var(--rborder);}
+.b-hw{background:var(--tbg);color:var(--teal);border:1px solid var(--tborder);}
+/* PRODUCT ITEM */
+.pi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.3rem;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:1rem;}
+.pi:hover{border-color:var(--border2);}
+.pn{font-family:var(--disp);font-size:14px;font-weight:700;margin-bottom:2px;}
+.pd2{font-size:11px;color:var(--text2);font-family:var(--mono);}
+/* STATS */
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.4rem;}
+.sc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1rem;}
+.slabel{font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:7px;text-transform:uppercase;letter-spacing:.4px;}
+.sval{font-family:var(--disp);font-size:26px;font-weight:800;}
+.ssub{font-size:11px;color:var(--text2);margin-top:2px;}
+/* QC ROWS */
+.qrow{background:var(--bg3);border-radius:8px;padding:12px 13px;margin-bottom:8px;border-left:3px solid var(--border2);}
+.qrow.gn{border-left-color:var(--green);}
+.qrow.rd{border-left-color:var(--red);}
+.qrh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;}
+.qrn{font-size:13px;font-weight:500;}
+.qrm{font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:4px;}
+.qrg{font-size:12px;color:var(--text2);padding:6px 10px;background:var(--bg4);border-radius:5px;border-left:2px solid var(--accent);margin-bottom:9px;}
+.toggle-row{display:flex;gap:5px;}
+.tgl{padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--text2);font-family:var(--mono);}
+.tgl.pass.on{background:var(--gbg);color:var(--green);border-color:var(--gborder);}
+.tgl.fail.on{background:var(--rbg);color:var(--red);border-color:var(--rborder);}
+.tgl:hover{background:var(--bg4);}
+.mrow{display:flex;gap:8px;align-items:center;margin-bottom:7px;}
+.mrow label{margin:0;white-space:nowrap;}
+.mrow input{flex:1;padding:5px 9px;font-size:12px;}
+/* PROGRESS */
+.pt{background:var(--bg3);border-radius:4px;height:5px;overflow:hidden;margin:5px 0;}
+.pf{height:100%;border-radius:4px;transition:width .4s;background:var(--accent);}
+.pf.g{background:var(--green);}
+.pf.r{background:var(--red);}
+/* FILTER */
+.fbar{display:flex;gap:7px;margin-bottom:1.3rem;flex-wrap:wrap;}
+.fc{padding:5px 12px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:var(--mono);}
+.fc:hover{background:var(--bg3);}
+.fc.on{border-color:var(--accent);color:var(--accent2);background:var(--blbg);}
+/* TOAST */
+.toast{position:fixed;bottom:2rem;right:2rem;background:var(--bg2);border:1px solid var(--gborder);border-radius:var(--r);padding:12px 17px;font-size:13px;color:var(--green);z-index:999;transform:translateY(70px);opacity:0;transition:all .25s;max-width:280px;font-family:var(--mono);}
+.toast.on{transform:translateY(0);opacity:1;}
+.toast.err{border-color:var(--rborder);color:var(--red);}
+/* DETAIL */
+.det-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;align-items:center;justify-content:center;padding:1rem;}
+.det-ov.on{display:flex;}
+.det-box{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:1.8rem;width:100%;max-width:660px;max-height:88vh;overflow-y:auto;}
+.dh{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.3rem;}
+.dc{cursor:pointer;color:var(--text2);font-size:22px;}
+.dc:hover{color:var(--text);}
+/* LOADING */
+.lbar{height:2px;background:var(--accent);position:fixed;top:0;left:0;width:0;transition:width .3s;z-index:999;}
+/* EMPTY */
+.empty{text-align:center;padding:3rem 1rem;color:var(--text3);font-size:13px;}
+/* RESPONSIVE */
+@media(max-width:680px){
+  .fr,.fr3,.cfg-grid{grid-template-columns:1fr;}
+  .sgrid{grid-template-columns:1fr 1fr;}
+  .roles{grid-template-columns:1fr;}
+  .nav{padding:0 1rem;}
+  .view{padding:1rem;}
+}
+</style>
+</head>
+<body>
+<div class="lbar" id="lbar"></div>
+
+<!-- GATE -->
+<div class="screen on" id="s-gate">
+  <div class="gate-box">
+    <div class="brand">Wal<span>Met</span></div>
+    <div class="sub">Product QC Portal · Embedded Systems</div>
+    <div class="roles">
+      <div class="rbtn" id="r-rd" onclick="pickRole('rd')">
+        <div class="ricon">⚙</div>
+        <div class="rname">R&amp;D</div>
+        <div class="rdesc">Submit products</div>
+      </div>
+      <div class="rbtn" id="r-qc" onclick="pickRole('qc')">
+        <div class="ricon">🔬</div>
+        <div class="rname">QC</div>
+        <div class="rdesc">Run tests</div>
+      </div>
+      <div class="rbtn" id="r-biz" onclick="pickRole('business')">
+        <div class="ricon">📊</div>
+        <div class="rname">Business</div>
+        <div class="rdesc">View status</div>
+      </div>
+    </div>
+    <button class="enter-btn" id="enter-btn" disabled onclick="enterPortal()">Enter Portal →</button>
+    <div class="admin-link" onclick="openPin()">Admin / Config ⚙</div>
+  </div>
+</div>
+
+<!-- PIN PANEL -->
+<div class="panel" id="p-pin">
+  <div class="pbox">
+    <div class="pin-title">Admin Access</div>
+    <div class="pin-sub">Enter 4-digit PIN · Default: 1234</div>
+    <div class="pin-dots">
+      <div class="pd" id="pd0"></div><div class="pd" id="pd1"></div>
+      <div class="pd" id="pd2"></div><div class="pd" id="pd3"></div>
+    </div>
+    <div class="pin-err" id="pin-err"></div>
+    <div class="keypad">
+      <button class="kbtn" onclick="pk('1')">1</button>
+      <button class="kbtn" onclick="pk('2')">2</button>
+      <button class="kbtn" onclick="pk('3')">3</button>
+      <button class="kbtn" onclick="pk('4')">4</button>
+      <button class="kbtn" onclick="pk('5')">5</button>
+      <button class="kbtn" onclick="pk('6')">6</button>
+      <button class="kbtn" onclick="pk('7')">7</button>
+      <button class="kbtn" onclick="pk('8')">8</button>
+      <button class="kbtn" onclick="pk('9')">9</button>
+      <button class="kbtn" onclick="pk('back')">⌫</button>
+      <button class="kbtn" onclick="pk('0')">0</button>
+      <button class="kbtn" style="opacity:0;pointer-events:none"></button>
+    </div>
+    <span class="cancel" onclick="closePin()">Cancel</span>
+  </div>
+</div>
+
+<!-- CONFIG PANEL -->
+<div class="panel" id="p-cfg">
+  <div class="pbox wide">
+    <div class="cfg-title">Wal<span style="color:var(--accent2)">Met</span> Config</div>
+    <div class="cfg-badge">Admin Only</div>
+    <div class="info-box"><b>Creator setup only.</b> After saving, QC and Business team members just open the file, select their role, and tap Enter Portal — they never see this screen.</div>
+    <div class="cfg-grid">
+      <div><label>API Key</label><input id="f-apiKey" placeholder="AIzaSy..."/></div>
+      <div><label>Auth Domain</label><input id="f-authDomain" placeholder="project.firebaseapp.com"/></div>
+      <div><label>Project ID</label><input id="f-projectId" placeholder="your-project-id"/></div>
+      <div><label>Storage Bucket</label><input id="f-storageBucket" placeholder="project.appspot.com"/></div>
+      <div><label>Messaging Sender ID</label><input id="f-messagingSenderId" placeholder="123456789"/></div>
+      <div><label>App ID</label><input id="f-appId" placeholder="1:123:web:abc"/></div>
+    </div>
+    <div class="fr" style="margin-bottom:.6rem;">
+      <div><label>Admin PIN (4 digits)</label><input id="f-pin" type="password" maxlength="4" placeholder="1234" style="letter-spacing:6px;font-family:var(--mono)"/></div>
+      <div></div>
+    </div>
+    <div class="cfg-err" id="cfg-err"></div>
+    <div class="brow">
+      <button class="btn bp" onclick="saveCfg()">Save &amp; Connect →</button>
+      <button class="btn bg" onclick="closeCfg()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <nav class="nav">
+    <div class="nav-brand">
+      <div class="nav-logo">Wal<span>Met</span></div>
+      <div class="nav-div"></div>
+      <div class="nav-sub">QC Portal</div>
+    </div>
+    <div class="nav-tabs">
+      <div class="tab on" id="t-rd" onclick="goTab('rd')">R&amp;D</div>
+      <div class="tab" id="t-qc" onclick="goTab('qc')">QC</div>
+      <div class="tab" id="t-biz" onclick="goTab('business')">Business</div>
+    </div>
+    <div class="nav-r">
+      <div class="sync"><div class="sdot" id="sdot"></div><div class="slbl" id="slbl">connecting</div></div>
+      <div class="role-pill" id="rpill">—</div>
+      <div class="sw-btn" onclick="switchRole()">Switch</div>
+    </div>
+  </nav>
+
+  <!-- R&D -->
+  <div class="view on" id="v-rd">
+    <div class="ph"><div class="pt">Submit Product for Testing</div><div class="ps">Fill hardware details and define test cases. QC receives this the moment you submit.</div></div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.1rem;">
+        <div class="ct">Hardware Details</div><span class="badge b-rev">R&amp;D Submission</span>
+      </div>
+      <div class="fr">
+        <div><label>Product / Module Name</label><input id="i-name" placeholder="e.g. Motor Driver Board v3"/></div>
+        <div><label>Part Number / Build ID</label><input id="i-pid" placeholder="e.g. WM-MDR-2024-03"/></div>
+      </div>
+      <div class="fr3">
+        <div><label>MCU / Main IC</label><input id="i-mcu" placeholder="e.g. STM32F4, ESP32-S3"/></div>
+        <div><label>HW Revision</label><input id="i-hwrev" placeholder="e.g. Rev B, PCB v2.1"/></div>
+        <div><label>FW Version</label><input id="i-fwver" placeholder="e.g. v1.4.2 or N/A"/></div>
+      </div>
+      <div class="fr3">
+        <div><label>Operating Voltage</label><input id="i-voltage" placeholder="e.g. 3.3V, 5V, 12V"/></div>
+        <div><label>Engineer Name</label><input id="i-eng" placeholder="Submitting engineer"/></div>
+        <div><label>Priority</label>
+          <select id="i-pri">
+            <option value="critical">Critical</option>
+            <option value="high" selected>High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="ff"><label>Change Description / Notes for QC</label><textarea id="i-desc" rows="2" placeholder="What changed in this build? Any known issues or areas to focus on?"></textarea></div>
+      <div class="sd"><div class="sl"></div><div class="st">Test Cases</div><div class="sl"></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:12px;color:var(--text2);">Define each test — QC will enter measured values and mark pass/fail.</span>
+        <button class="btn bg bsm" onclick="addTC()">+ Add Test Case</button>
+      </div>
+      <table class="tct">
+        <thead><tr>
+          <th style="width:36px">#</th>
+          <th style="width:22%">Test Name</th>
+          <th style="width:28%">Expected / Goal</th>
+          <th style="width:18%">Category</th>
+          <th style="width:14%">Condition</th>
+          <th style="width:28px"></th>
+        </tr></thead>
+        <tbody id="tc-body"></tbody>
+      </table>
+      <div class="brow">
+        <button class="btn bp" onclick="submitProduct()">Submit to QC →</button>
+        <button class="btn bg" onclick="clearForm()">Clear</button>
+      </div>
+    </div>
+    <div class="sd"><div class="sl"></div><div class="st">Submitted Products</div><div class="sl"></div></div>
+    <div id="rd-list"></div>
+  </div>
+
+  <!-- QC -->
+  <div class="view" id="v-qc">
+    <div class="ph"><div class="pt">QC Testing Queue</div><div class="ps">Enter measured values for each test, mark pass/fail, then submit the report.</div></div>
+    <div class="fbar">
+      <button class="fc on" onclick="fqc('all',this)">All</button>
+      <button class="fc" onclick="fqc('pending',this)">Pending</button>
+      <button class="fc" onclick="fqc('inreview',this)">In Review</button>
+      <button class="fc" onclick="fqc('pass',this)">Passed</button>
+      <button class="fc" onclick="fqc('fail',this)">Failed</button>
+    </div>
+    <div id="qc-list"></div>
+  </div>
+
+  <!-- BUSINESS -->
+  <div class="view" id="v-biz">
+    <div class="ph"><div class="pt">Project Status — WalMet</div><div class="ps">Live overview of all product submissions. Updates automatically.</div></div>
+    <div class="sgrid" id="stat-grid"></div>
+    <div class="fbar">
+      <button class="fc on" onclick="fbiz('all',this)">All</button>
+      <button class="fc" onclick="fbiz('pending',this)">Pending QC</button>
+      <button class="fc" onclick="fbiz('inreview',this)">In Review</button>
+      <button class="fc" onclick="fbiz('pass',this)">Passed</button>
+      <button class="fc" onclick="fbiz('fail',this)">Failed</button>
+    </div>
+    <div id="biz-list"></div>
+  </div>
+</div>
+
+<!-- DETAIL OVERLAY -->
+<div class="det-ov" id="det-ov" onclick="if(event.target===this)closeDet()">
+  <div class="det-box">
+    <div class="dh"><span class="ct" id="det-title">Report</span><span class="dc" onclick="closeDet()">×</span></div>
+    <div id="det-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase compat SDK (plain scripts, no modules) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+// ─── CONSTANTS ───
+var CATS = ['Power Supply','Signal Integrity','Thermal','Firmware / Software','EMC / EMI','GPIO / Digital I/O','Communication Bus','Analog / ADC','Protection Circuit','Mechanical / Assembly','Regulatory / Safety','Other'];
+var CONDS = ['Room Temp','High Temp','Low Temp','Full Load','No Load','Startup','Shutdown','Vibration'];
+
+// ─── STATE ───
+var role = null;
+var products = [];
+var db = null;
+var unsub = null;
+var pinVal = '';
+var tcN = 0;
+var tcList = [];
+var qFilter = 'all';
+var bFilter = 'all';
+
+// ─── SHOW/HIDE HELPERS ───
+function show(id){ document.getElementById(id).classList.add('on'); }
+function hide(id){ document.getElementById(id).classList.remove('on'); }
+function vis(id,v){ document.getElementById(id).style.display = v ? 'block' : 'none'; }
+
+// ─── GATE ───
+function pickRole(r){
+  role = r;
+  ['rd','qc','business'].forEach(function(x){ document.getElementById('r-'+x.replace('business','biz')).classList.remove('sel'); });
+  var map = {rd:'r-rd', qc:'r-qc', business:'r-biz'};
+  document.getElementById(map[r]).classList.add('sel');
+  document.getElementById('enter-btn').disabled = false;
+}
+
+function enterPortal(){
+  if(!role) return;
+  var cfg = loadCfg();
+  if(!cfg){
+    // No config yet — open config screen directly (no PIN needed first time)
+    openCfgDirect();
+    return;
+  }
+  launchApp(cfg);
+}
+
+function switchRole(){
+  hide('app');
+  show('s-gate');
+  document.getElementById('enter-btn').disabled = true;
+  role = null;
+  ['r-rd','r-qc','r-biz'].forEach(function(id){ document.getElementById(id).classList.remove('sel'); });
+}
+
+// ─── PIN ───
+function openPin(){
+  pinVal = '';
+  updateDots();
+  document.getElementById('pin-err').textContent = '';
+  show('p-pin');
+}
+function closePin(){ hide('p-pin'); }
+
+function pk(k){
+  document.getElementById('pin-err').textContent = '';
+  if(k === 'back'){ pinVal = pinVal.slice(0,-1); updateDots(); return; }
+  if(pinVal.length >= 4) return;
+  pinVal += k;
+  updateDots();
+  if(pinVal.length === 4) setTimeout(checkPin, 150);
+}
+
+function updateDots(){
+  for(var i=0;i<4;i++){
+    var el = document.getElementById('pd'+i);
+    if(i < pinVal.length) el.classList.add('on'); else el.classList.remove('on');
+  }
+}
+
+function checkPin(){
+  var saved = localStorage.getItem('wm_pin') || '1234';
+  if(pinVal === saved){
+    closePin();
+    openCfgDirect();
+  } else {
+    document.getElementById('pin-err').textContent = 'Wrong PIN. Default is 1234';
+    pinVal = ''; updateDots();
+  }
+}
+
+// ─── CONFIG ───
+function openCfgDirect(){
+  // Pre-fill if config already exists
+  var cfg = loadCfg();
+  if(cfg){
+    Object.keys(cfg).forEach(function(k){
+      var el = document.getElementById('f-'+k);
+      if(el) el.value = cfg[k];
+    });
+  }
+  var pin = localStorage.getItem('wm_pin') || '';
+  document.getElementById('f-pin').value = pin;
+  document.getElementById('cfg-err').textContent = '';
+  show('p-cfg');
+}
+
+function closeCfg(){ hide('p-cfg'); }
+
+function saveCfg(){
+  var keys = ['apiKey','authDomain','projectId','storageBucket','messagingSenderId','appId'];
+  var cfg = {};
+  for(var i=0;i<keys.length;i++){
+    var v = document.getElementById('f-'+keys[i]).value.trim();
+    if(!v){ document.getElementById('cfg-err').textContent = 'Please fill all 6 Firebase fields.'; return; }
+    cfg[keys[i]] = v;
+  }
+  var pin = document.getElementById('f-pin').value.trim();
+  if(/^\d{4}$/.test(pin)) localStorage.setItem('wm_pin', pin);
+  localStorage.setItem('wm_cfg', JSON.stringify(cfg));
+  hide('p-cfg');
+  if(!role) role = 'rd';
+  launchApp(cfg);
+}
+
+function loadCfg(){
+  try{ return JSON.parse(localStorage.getItem('wm_cfg')); }catch(e){ return null; }
+}
+
+// ─── FIREBASE LAUNCH ───
+function launchApp(cfg){
+  try{
+    // Delete any existing app with same name to avoid duplicate error
+    try{ firebase.app('wm').delete(); }catch(e){}
+    var app = firebase.initializeApp(cfg, 'wm');
+    db = firebase.firestore(app);
+    hide('s-gate');
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('rpill').textContent = {rd:'R&D Engineer',qc:'QC Engineer',business:'Business'}[role]||role;
+    startSync();
+    goTab(role || 'rd');
+  } catch(e){
+    document.getElementById('cfg-err').textContent = 'Firebase error: '+e.message;
+    show('p-cfg');
+  }
+}
+
+function startSync(){
+  if(unsub) unsub();
+  setSyncStatus('connecting');
+  unsub = db.collection('wm_products').onSnapshot(function(snap){
+    products = [];
+    snap.forEach(function(d){ products.push(d.data()); });
+    products.sort(function(a,b){ return (b.submittedAt||'').localeCompare(a.submittedAt||''); });
+    setSyncStatus('live');
+    refreshView();
+  }, function(err){
+    setSyncStatus('error');
+    toast('Sync error: '+err.message, true);
+  });
+}
+
+function setSyncStatus(s){
+  var dot = document.getElementById('sdot');
+  var lbl = document.getElementById('slbl');
+  dot.className = 'sdot' + (s==='live' ? ' live' : '');
+  lbl.textContent = s==='live' ? 'live sync' : s==='error' ? 'sync error' : 'connecting';
+  lbl.style.color = s==='live' ? 'var(--green)' : s==='error' ? 'var(--red)' : 'var(--text3)';
+}
+
+async function saveProduct(p){
+  try{ await db.collection('wm_products').doc(p.id).set(p); }
+  catch(e){ toast('Save error: '+e.message, true); }
+}
+
+// ─── TABS ───
+function goTab(t){
+  ['rd','qc','business'].forEach(function(x){
+    var tid = 't-'+(x==='business'?'biz':x);
+    var vid = 'v-'+(x==='business'?'biz':x);
+    document.getElementById(tid).classList.toggle('on', x===t);
+    document.getElementById(vid).classList.toggle('on', x===t);
+  });
+  if(t==='rd') renderRD();
+  if(t==='qc') renderQC();
+  if(t==='business') renderBiz();
+}
+
+function refreshView(){
+  var on = document.querySelector('.tab.on');
+  if(!on) return;
+  var map = {'t-rd':'rd','t-qc':'qc','t-biz':'business'};
+  var id = on.id;
+  if(id==='t-rd') renderRD();
+  if(id==='t-qc') renderQC();
+  if(id==='t-biz') renderBiz();
+}
+
+// ─── R&D FORM ───
+function addTC(){
+  tcN++;
+  var n = tcN;
+  tcList.push(n);
+  var opts = CATS.map(function(c){ return '<option>'+c+'</option>'; }).join('');
+  var copts = CONDS.map(function(c){ return '<option>'+c+'</option>'; }).join('');
+  var tr = document.createElement('tr');
+  tr.id = 'tcr-'+n;
+  tr.innerHTML = '<td style="font-family:var(--mono);font-size:10px;color:var(--text3)">#'+('0'+n).slice(-2)+'</td>'
+    +'<td><input class="tci" id="tcn-'+n+'" placeholder="e.g. VCC rail voltage"/></td>'
+    +'<td><input class="tci" id="tcg-'+n+'" placeholder="e.g. 3.3V ±2%"/></td>'
+    +'<td><select class="tcs" id="tcc-'+n+'">'+opts+'</select></td>'
+    +'<td><select class="tcs" id="tco-'+n+'">'+copts+'</select></td>'
+    +'<td style="cursor:pointer;color:var(--text3);text-align:center" onclick="delTC('+n+')" onmouseover="this.style.color=\'var(--red)\'" onmouseout="this.style.color=\'var(--text3)\'">✕</td>';
+  document.getElementById('tc-body').appendChild(tr);
+}
+
+function delTC(n){
+  var el = document.getElementById('tcr-'+n);
+  if(el) el.remove();
+  tcList = tcList.filter(function(x){ return x!==n; });
+}
+
+function clearForm(){
+  ['i-name','i-pid','i-mcu','i-hwrev','i-fwver','i-voltage','i-eng','i-desc'].forEach(function(id){
+    var el = document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('i-pri').value='high';
+  document.getElementById('tc-body').innerHTML='';
+  tcList=[]; tcN=0;
+}
+
+async function submitProduct(){
+  var name = document.getElementById('i-name').value.trim();
+  var pid = document.getElementById('i-pid').value.trim();
+  if(!name||!pid){ toast('Product name and Part Number are required.', true); return; }
+  var tcs = [];
+  for(var i=0;i<tcList.length;i++){
+    var n = tcList[i];
+    var nm = (document.getElementById('tcn-'+n)||{}).value||'';
+    if(nm.trim()){
+      tcs.push({
+        id: String(n),
+        name: nm.trim(),
+        goal: (document.getElementById('tcg-'+n)||{}).value||'',
+        cat: (document.getElementById('tcc-'+n)||{}).value||'Other',
+        cond: (document.getElementById('tco-'+n)||{}).value||'Room Temp',
+        result: null, measured: '', note: ''
+      });
+    }
+  }
+  if(!tcs.length){ toast('Add at least one test case.', true); return; }
+  var p = {
+    id: 'WM-'+Date.now(),
+    name: name, pid: pid,
+    mcu: document.getElementById('i-mcu').value.trim(),
+    hwrev: document.getElementById('i-hwrev').value.trim(),
+    fwver: document.getElementById('i-fwver').value.trim(),
+    voltage: document.getElementById('i-voltage').value.trim(),
+    engineer: document.getElementById('i-eng').value.trim(),
+    desc: document.getElementById('i-desc').value.trim(),
+    priority: document.getElementById('i-pri').value,
+    status: 'pending',
+    testCases: tcs,
+    submittedAt: new Date().toISOString(),
+    qcNote:'', qcEngineer:'', qcCompletedAt:null
+  };
+  loading(true);
+  await saveProduct(p);
+  loading(false);
+  toast('✓ Submitted — QC can see it now');
+  clearForm();
+}
+
+function renderRD(){
+  var el = document.getElementById('rd-list');
+  if(!products.length){ el.innerHTML='<div class="empty">No submissions yet.</div>'; return; }
+  el.innerHTML = products.map(function(p){
+    return '<div class="pi">'
+      +'<div style="flex:1"><div class="pn">'+x(p.name)+'</div>'
+      +'<div class="pd2">'+x(p.pid)+(p.hwrev?' · '+x(p.hwrev):'')+(p.mcu?' · '+x(p.mcu):'')+' · '+p.testCases.length+' tests · '+fd(p.submittedAt)+'</div></div>'
+      +'<div style="display:flex;gap:7px;align-items:center">'+sbadge(p.status)
+      +'<button class="btn bg bsm" onclick="openDet(\''+p.id+'\')">View →</button></div>'
+      +'</div>';
+  }).join('');
+}
+
+// ─── QC ───
+function fqc(f, el){
+  qFilter = f;
+  document.querySelectorAll('#v-qc .fc').forEach(function(c){ c.classList.remove('on'); });
+  el.classList.add('on');
+  renderQC();
+}
+
+function renderQC(){
+  var el = document.getElementById('qc-list');
+  var list = products;
+  if(qFilter!=='all') list = list.filter(function(p){ return p.status===qFilter; });
+  if(!list.length){ el.innerHTML='<div class="empty">Nothing in this queue.</div>'; return; }
+  el.innerHTML = list.map(function(p){ return qcCard(p); }).join('');
+}
+
+function qcCard(p){
+  var pass = p.testCases.filter(function(t){ return t.result==='pass'; }).length;
+  var fail = p.testCases.filter(function(t){ return t.result==='fail'; }).length;
+  var pct = p.testCases.length ? Math.round(pass/p.testCases.length*100) : 0;
+  var locked = p.status==='pass'||p.status==='fail';
+
+  var rows = p.testCases.map(function(tc){
+    return '<div class="qrow '+(tc.result==='pass'?'gn':tc.result==='fail'?'rd':'')+'">'
+      +'<div class="qrh"><div style="flex:1">'
+      +'<div class="qrn">'+x(tc.name)+'</div>'
+      +'<div class="qrm">'+tc.cat+' · '+tc.cond+'</div>'
+      +'<div class="qrg"><b>Expected:</b> '+x(tc.goal)+'</div>'
+      +'</div>'
+      +'<div class="toggle-row">'
+      +'<button class="tgl pass'+(tc.result==='pass'?' on':'')+'" onclick="setRes(\''+p.id+'\',\''+tc.id+'\',\'pass\')"'+(locked?' disabled':'')+'>PASS</button>'
+      +'<button class="tgl fail'+(tc.result==='fail'?' on':'')+'" onclick="setRes(\''+p.id+'\',\''+tc.id+'\',\'fail\')"'+(locked?' disabled':'')+'>FAIL</button>'
+      +'</div></div>'
+      +'<div class="mrow"><label>Measured</label>'
+      +'<input placeholder="e.g. 3.27V, 48°C…" value="'+x(tc.measured||'')+'" onchange="setTCF(\''+p.id+'\',\''+tc.id+'\',\'measured\',this.value)"'+(locked?' disabled':'')+' style="background:var(--bg2);border:1px solid var(--border2);border-radius:5px;padding:5px 9px;"/>'
+      +'</div>'
+      +'<input placeholder="Note (optional)…" value="'+x(tc.note||'')+'" onchange="setTCF(\''+p.id+'\',\''+tc.id+'\',\'note\',this.value)"'+(locked?' disabled':'')+' style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:5px;padding:5px 9px;font-size:11px;color:var(--text);font-family:var(--body);outline:none;"/>'
+      +'</div>';
+  }).join('');
+
+  var signoff = locked
+    ? '<div style="font-size:11px;color:var(--text2);font-family:var(--mono)">Submitted '+fd(p.qcCompletedAt)+' by '+x(p.qcEngineer||'QC')+'.<button class="btn bg bsm" style="margin-left:8px" onclick="reopenQC(\''+p.id+'\')">Reopen</button></div>'
+    : '<div class="brow">'
+      +'<button class="btn bs" onclick="finalQC(\''+p.id+'\',\'pass\')">✓ Submit as PASSED</button>'
+      +'<button class="btn bd" onclick="finalQC(\''+p.id+'\',\'fail\')">✗ Submit as FAILED</button>'
+      +'<button class="btn bg bsm" onclick="markRev(\''+p.id+'\')">Mark In Review</button>'
+      +'</div>';
+
+  return '<div class="card">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;gap:1rem">'
+    +'<div><div class="ct">'+x(p.name)+'</div>'
+    +'<div class="cm">'+x(p.pid)+(p.hwrev?' · '+x(p.hwrev):'')+(p.mcu?' · '+x(p.mcu):'')+(p.voltage?' · '+x(p.voltage):'')+' · '+ptag(p.priority)+'</div>'
+    +'<div class="cm">Submitted by '+x(p.engineer||'R&D')+' · '+fd(p.submittedAt)+'</div></div>'
+    +sbadge(p.status)+'</div>'
+    +(p.desc?'<div style="font-size:12px;color:var(--text2);margin-bottom:1rem;padding:8px 11px;background:var(--bg3);border-radius:7px;border-left:3px solid var(--accent)">'+x(p.desc)+'</div>':'')
+    +'<div style="display:flex;gap:1.6rem;font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:6px">'
+    +'<span><span style="color:var(--text)">'+p.testCases.length+'</span> total</span>'
+    +'<span style="color:var(--green)">✓ '+pass+' pass</span>'
+    +'<span style="color:var(--red)">✗ '+fail+' fail</span>'
+    +'<span><span style="color:var(--accent2)">'+pct+'%</span> done</span></div>'
+    +'<div class="pt"><div class="pf '+(pct===100?(fail?'r':'g'):'')+'" style="width:'+pct+'%"></div></div>'
+    +'<div style="margin:1rem 0">'+rows+'</div>'
+    +'<div class="sd"><div class="sl"></div><div class="st">QC Sign-off</div><div class="sl"></div></div>'
+    +'<div class="fr" style="margin-bottom:.7rem">'
+    +'<div><label>QC Engineer</label><input id="qce-'+p.id+'" placeholder="Your name" value="'+x(p.qcEngineer||'')+'" onchange="setPF(\''+p.id+'\',\'qcEngineer\',this.value)"'+(locked?' disabled':'')+'/></div>'
+    +'<div><label>Overall Remarks</label><input id="qcn-'+p.id+'" placeholder="Summary note…" value="'+x(p.qcNote||'')+'" onchange="setPF(\''+p.id+'\',\'qcNote\',this.value)"'+(locked?' disabled':'')+'/></div>'
+    +'</div>'+signoff+'</div>';
+}
+
+async function setRes(pid, tcId, result){
+  var p = products.find(function(x){ return x.id===pid; });
+  if(!p||p.status==='pass'||p.status==='fail') return;
+  var tc = p.testCases.find(function(t){ return t.id===tcId; });
+  if(!tc) return;
+  tc.result = tc.result===result ? null : result;
+  await saveProduct(p);
+}
+
+async function setTCF(pid, tcId, field, val){
+  var p = products.find(function(x){ return x.id===pid; });
+  if(!p) return;
+  var tc = p.testCases.find(function(t){ return t.id===tcId; });
+  if(tc){ tc[field]=val; await saveProduct(p); }
+}
+
+async function setPF(pid, field, val){
+  var p = products.find(function(x){ return x.id===pid; });
+  if(p){ p[field]=val; await saveProduct(p); }
+}
+
+async function markRev(pid){
+  var p = products.find(function(x){ return x.id===pid; });
+  if(p&&p.status==='pending'){ p.status='inreview'; await saveProduct(p); toast('Marked as In Review'); }
+}
+
+async function reopenQC(pid){
+  var p = products.find(function(x){ return x.id===pid; });
+  if(p){ p.status='inreview'; p.qcCompletedAt=null; await saveProduct(p); toast('Report reopened'); }
+}
+
+async function finalQC(pid, result){
+  var p = products.find(function(x){ return x.id===pid; });
+  if(!p) return;
+  var unres = p.testCases.filter(function(t){ return !t.result; }).length;
+  if(unres>0){ toast(unres+' test case(s) still unresolved.', true); return; }
+  p.status=result; p.qcCompletedAt=new Date().toISOString();
+  loading(true); await saveProduct(p); loading(false);
+  toast(p.name+' marked '+result.toUpperCase());
+}
+
+// ─── BUSINESS ───
+function fbiz(f, el){
+  bFilter = f;
+  document.querySelectorAll('#v-biz .fc').forEach(function(c){ c.classList.remove('on'); });
+  el.classList.add('on');
+  renderBiz();
+}
+
+function renderBiz(){
+  var total=products.length;
+  var passed=products.filter(function(p){return p.status==='pass';}).length;
+  var failed=products.filter(function(p){return p.status==='fail';}).length;
+  var pending=products.filter(function(p){return p.status==='pending'||p.status==='inreview';}).length;
+  document.getElementById('stat-grid').innerHTML=
+    '<div class="sc"><div class="slabel">Total</div><div class="sval" style="color:var(--text)">'+total+'</div><div class="ssub">all submissions</div></div>'
+    +'<div class="sc"><div class="slabel">QC Passed</div><div class="sval" style="color:var(--green)">'+passed+'</div><div class="ssub">'+(total?Math.round(passed/total*100):0)+'% pass rate</div></div>'
+    +'<div class="sc"><div class="slabel">QC Failed</div><div class="sval" style="color:var(--red)">'+failed+'</div><div class="ssub">'+(total?Math.round(failed/total*100):0)+'% fail rate</div></div>'
+    +'<div class="sc"><div class="slabel">Awaiting QC</div><div class="sval" style="color:var(--amber)">'+pending+'</div><div class="ssub">in queue</div></div>';
+
+  var el = document.getElementById('biz-list');
+  var list = products;
+  if(bFilter!=='all') list = list.filter(function(p){
+    return bFilter==='pending' ? (p.status==='pending'||p.status==='inreview') : p.status===bFilter;
+  });
+  if(!list.length){ el.innerHTML='<div class="empty">No products match this filter.</div>'; return; }
+  el.innerHTML = list.map(function(p){
+    var pass=p.testCases.filter(function(t){return t.result==='pass';}).length;
+    var tot=p.testCases.length;
+    var pct=tot?Math.round(pass/tot*100):0;
+    return '<div class="pi" style="flex-direction:column;align-items:flex-start;gap:.6rem">'
+      +'<div style="display:flex;justify-content:space-between;width:100%;align-items:flex-start;gap:1rem;flex-wrap:wrap">'
+      +'<div><div class="pn">'+x(p.name)+'</div>'
+      +'<div class="pd2">'+x(p.pid)+(p.hwrev?' · '+x(p.hwrev):'')+(p.mcu?' · '+x(p.mcu):'')+(p.voltage?' · '+x(p.voltage):'')+' · '+fd(p.submittedAt)+' · '+ptag(p.priority)+'</div>'
+      +(p.engineer?'<div class="pd2">R&D: '+x(p.engineer)+'</div>':'')
+      +'</div>'
+      +'<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">'+sbadge(p.status)
+      +'<button class="btn bg bsm" onclick="openDet(\''+p.id+'\')">Full Report →</button></div>'
+      +'</div>'
+      +(p.desc?'<div style="font-size:11px;color:var(--text2)">'+x(p.desc)+'</div>':'')
+      +'<div style="width:100%">'
+      +'<div style="display:flex;justify-content:space-between;font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:3px"><span>Test coverage</span><span>'+pass+'/'+tot+' resolved</span></div>'
+      +'<div class="pt"><div class="pf '+(p.status==='pass'?'g':p.status==='fail'?'r':'')+'" style="width:'+pct+'%"></div></div>'
+      +'</div>'
+      +(p.qcNote?'<div style="font-size:11px;color:var(--text2);font-family:var(--mono)">QC: "'+x(p.qcNote)+'"'+(p.qcEngineer?' — '+x(p.qcEngineer):'')+' · '+fd(p.qcCompletedAt)+'</div>':'')
+      +'</div>';
+  }).join('');
+}
+
+// ─── DETAIL ───
+function openDet(pid){
+  var p = products.find(function(v){ return v.id===pid; });
+  if(!p) return;
+  document.getElementById('det-title').textContent = p.name;
+  var pass=p.testCases.filter(function(t){return t.result==='pass';}).length;
+  var fail=p.testCases.filter(function(t){return t.result==='fail';}).length;
+  document.getElementById('det-body').innerHTML=
+    '<div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:1.1rem">'+sbadge(p.status)+(p.hwrev?'<span class="badge b-hw">'+x(p.hwrev)+'</span>':'')+'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.1rem">'
+    +'<div class="sc"><div class="slabel">Part No.</div><div style="font-size:12px;font-weight:500;margin-top:3px;font-family:var(--mono)">'+x(p.pid||'—')+'</div></div>'
+    +'<div class="sc"><div class="slabel">MCU / IC</div><div style="font-size:12px;font-weight:500;margin-top:3px">'+x(p.mcu||'—')+'</div></div>'
+    +'<div class="sc"><div class="slabel">Voltage</div><div style="font-size:12px;font-weight:500;margin-top:3px">'+x(p.voltage||'—')+'</div></div>'
+    +'<div class="sc"><div class="slabel">FW Version</div><div style="font-size:12px;font-weight:500;margin-top:3px">'+x(p.fwver||'—')+'</div></div>'
+    +'<div class="sc"><div class="slabel">Passed</div><div class="sval" style="color:var(--green)">'+pass+'</div></div>'
+    +'<div class="sc"><div class="slabel">Failed</div><div class="sval" style="color:var(--red)">'+fail+'</div></div>'
+    +'</div>'
+    +(p.desc?'<div style="font-size:12px;color:var(--text2);margin-bottom:1.1rem;padding:9px 12px;background:var(--bg3);border-radius:7px;border-left:3px solid var(--accent)">'+x(p.desc)+'</div>':'')
+    +'<div class="sd"><div class="sl"></div><div class="st">Test Results</div><div class="sl"></div></div>'
+    +p.testCases.map(function(tc){
+      return '<div style="background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:7px;border-left:3px solid '+(tc.result==='pass'?'var(--green)':tc.result==='fail'?'var(--red)':'var(--border2)')+'">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">'
+        +'<div><span style="font-size:13px;font-weight:500">'+x(tc.name)+'</span>'
+        +'<span style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-left:8px">'+tc.cat+' · '+tc.cond+'</span></div>'
+        +(tc.result?'<span class="badge '+(tc.result==='pass'?'b-pass':'b-fail')+'">'+(tc.result==='pass'?'✓ PASS':'✗ FAIL')+'</span>':'<span class="badge b-pend">Pending</span>')
+        +'</div>'
+        +'<div style="font-size:11px;color:var(--text2);margin-bottom:'+(tc.measured?'4px':'0')+'">Expected: '+x(tc.goal)+'</div>'
+        +(tc.measured?'<div style="font-size:11px;color:var(--teal);font-family:var(--mono)">Measured: '+x(tc.measured)+'</div>':'')
+        +(tc.note?'<div style="font-size:11px;color:var(--text2);font-family:var(--mono);margin-top:2px">Note: '+x(tc.note)+'</div>':'')
+        +'</div>';
+    }).join('')
+    +(p.qcNote?'<div style="margin-top:1rem;padding:10px 13px;background:var(--bg3);border-radius:8px;border-left:3px solid var(--amber)">'
+      +'<div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">QC Remarks</div>'
+      +'<div style="font-size:13px">'+x(p.qcNote)+'</div>'
+      +(p.qcEngineer?'<div style="font-size:11px;color:var(--text2);margin-top:3px;font-family:var(--mono)">— '+x(p.qcEngineer)+' · '+fd(p.qcCompletedAt)+'</div>':'')
+      +'</div>':'');
+  show('det-ov');
+}
+function closeDet(){ hide('det-ov'); }
+
+// ─── UTILS ───
+function toast(msg, err){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast on' + (err?' err':'');
+  setTimeout(function(){ t.className='toast'; }, 2800);
+}
+function loading(on){
+  var b = document.getElementById('lbar');
+  b.style.width = on ? '70%' : '100%';
+  if(!on) setTimeout(function(){ b.style.width='0'; }, 300);
+}
+function sbadge(s){
+  var m={pending:'b-pend pending',inreview:'b-rev in review',pass:'b-pass passed',fail:'b-fail failed'};
+  var parts=(m[s]||'b-pend pending').split(' ');
+  return '<span class="badge '+parts[0]+'">'+parts.slice(1).join(' ')+'</span>';
+}
+function ptag(p){
+  var c={critical:'var(--red)',high:'var(--amber)',medium:'var(--accent2)',low:'var(--text3)'};
+  return '<span style="color:'+(c[p]||'var(--text2)')+';font-family:var(--mono);font-size:10px">'+(p||'').toUpperCase()+'</span>';
+}
+function fd(iso){ if(!iso)return'—'; return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+function x(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ─── AUTO-LAUNCH if config already saved ───
+(function(){
+  var cfg = loadCfg();
+  if(cfg){
+    role = 'rd';
+    launchApp(cfg);
+  }
+})();
+</script>
+</body>
+</html>
