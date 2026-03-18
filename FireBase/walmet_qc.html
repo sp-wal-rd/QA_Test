@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>WalMet — QC Portal</title>
+<title>WalnutMed — QC Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 :root{
@@ -206,7 +206,7 @@ select option{background:var(--bg3);}
 <!-- GATE -->
 <div class="screen on" id="s-gate">
   <div class="gate-box">
-    <div class="brand">Wal<span>Met</span></div>
+    <div class="brand">Walnut<span>Med</span></div>
     <div class="sub">Product QC Portal · Embedded Systems</div>
     <div class="roles">
       <div class="rbtn" id="r-rd" onclick="pickRole('rd')">
@@ -261,7 +261,7 @@ select option{background:var(--bg3);}
 <!-- CONFIG PANEL -->
 <div class="panel" id="p-cfg">
   <div class="pbox wide">
-    <div class="cfg-title">Wal<span style="color:var(--accent2)">Met</span> Config</div>
+    <div class="cfg-title">Walnut<span style="color:var(--accent2)">Med</span> Config</div>
     <div class="cfg-badge">Admin Only</div>
     <div class="info-box"><b>Creator setup only.</b> After saving, QC and Business team members just open the file, select their role, and tap Enter Portal — they never see this screen.</div>
     <div class="cfg-grid">
@@ -277,8 +277,13 @@ select option{background:var(--bg3);}
       <div></div>
     </div>
     <div class="cfg-err" id="cfg-err"></div>
+    <div style="background:var(--gbg);border:1px solid var(--gborder);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--green);margin-bottom:1rem;line-height:1.6;">
+      <b style="display:block;margin-bottom:3px;">⬇ Download &amp; Share</b>
+      After filling the config above, click <b>Download Configured File</b> to get a new HTML file with your Firebase keys baked in. Share that file with your team — they just open it and start using it immediately, no setup needed.
+    </div>
     <div class="brow">
       <button class="btn bp" onclick="saveCfg()">Save &amp; Connect →</button>
+      <button class="btn bs" onclick="exportFile()">⬇ Download Configured File</button>
       <button class="btn bg" onclick="closeCfg()">Cancel</button>
     </div>
   </div>
@@ -288,7 +293,7 @@ select option{background:var(--bg3);}
 <div id="app">
   <nav class="nav">
     <div class="nav-brand">
-      <div class="nav-logo">Wal<span>Met</span></div>
+      <div class="nav-logo">Walnut<span>Med</span></div>
       <div class="nav-div"></div>
       <div class="nav-sub">QC Portal</div>
     </div>
@@ -373,7 +378,7 @@ select option{background:var(--bg3);}
 
   <!-- BUSINESS -->
   <div class="view" id="v-biz">
-    <div class="ph"><div class="pt">Project Status — WalMet</div><div class="ps">Live overview of all product submissions. Updates automatically.</div></div>
+    <div class="ph"><div class="pt">Project Status — WalnutMed</div><div class="ps">Live overview of all product submissions. Updates automatically.</div></div>
     <div class="sgrid" id="stat-grid"></div>
     <div class="fbar">
       <button class="fc on" onclick="fbiz('all',this)">All</button>
@@ -521,6 +526,57 @@ function saveCfg(){
 
 function loadCfg(){
   try{ return JSON.parse(localStorage.getItem('wm_cfg')); }catch(e){ return null; }
+}
+
+function exportFile(){
+  var keys=['apiKey','authDomain','projectId','storageBucket','messagingSenderId','appId'];
+  var cfg={};
+  for(var i=0;i<keys.length;i++){
+    var v=document.getElementById('f-'+keys[i]).value.trim();
+    if(!v){document.getElementById('cfg-err').textContent='Please fill all 6 fields before downloading.';return;}
+    cfg[keys[i]]=v;
+  }
+  var pin=document.getElementById('f-pin').value.trim()||'1234';
+  var MARKER='//@@WalnutMed'+'_INJECT@@';
+
+  fetch(location.href)
+    .then(function(r){return r.text();})
+    .then(function(src){
+      buildAndDownload(src, cfg, pin, MARKER);
+    })
+    .catch(function(){
+      // file:// protocol — fetch not allowed. Use XMLHttpRequest instead.
+      var xhr=new XMLHttpRequest();
+      xhr.open('GET',location.href,true);
+      xhr.onload=function(){buildAndDownload(xhr.responseText,cfg,pin,MARKER);};
+      xhr.onerror=function(){document.getElementById('cfg-err').textContent='Could not read file. Try opening via a local server or drag into browser address bar.';};
+      xhr.send();
+    });
+}
+
+function buildAndDownload(src, cfg, pin, MARKER){
+  if(src.indexOf(MARKER)===-1){
+    document.getElementById('cfg-err').textContent='Export failed: marker not found in source.';
+    return;
+  }
+  var replacement='var HARDCODED_CFG='+JSON.stringify(cfg)+';\n'
+    +'var HARDCODED_PIN='+JSON.stringify(pin)+';\n'
+    +'(function(){\n'
+    +'  localStorage.setItem("wm_cfg",JSON.stringify(HARDCODED_CFG));\n'
+    +'  localStorage.setItem("wm_pin",HARDCODED_PIN);\n'
+    +'  role="rd";\n'
+    +'  launchApp(HARDCODED_CFG);\n'
+    +'})();';
+  var out=src.replace(MARKER, replacement);
+  var blob=new Blob([out],{type:'text/html'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='WalnutMed_QC_Portal.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  toast('\u2713 WalnutMed_QC_Portal.html downloaded \u2014 share this with your team');
 }
 
 // ─── FIREBASE LAUNCH ───
@@ -902,14 +958,7 @@ function ptag(p){
 function fd(iso){ if(!iso)return'—'; return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
 function x(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-// ─── AUTO-LAUNCH if config already saved ───
-(function(){
-  var cfg = loadCfg();
-  if(cfg){
-    role = 'rd';
-    launchApp(cfg);
-  }
-})();
+//@@WalnutMed_INJECT@@
 </script>
 </body>
 </html>
